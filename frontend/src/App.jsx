@@ -70,6 +70,7 @@ export default function App() {
           <Route path="students" element={<RequireRole allow={["Admin"]}><AdminStudentsList /></RequireRole>} />
           <Route path="students/:id" element={<RequireRole allow={["Admin"]}><AdminStudentSummary /></RequireRole>} />
           <Route path="tests" element={<RequireRole allow={["Admin"]}><AdminTestPerformance /></RequireRole>} />
+          <Route path="create-test" element={<RequireRole allow={["Admin"]}><TestAdmin /></RequireRole>} />
           <Route path="skills" element={<RequireRole allow={["Admin"]}><AdminSkillsInsights /></RequireRole>} />
           <Route path="users" element={<RequireRole allow={["Admin"]}><AdminUsersList /></RequireRole>} />
           <Route path="create-teacher" element={<RequireRole allow={["Admin"]}><AdminCreateTeacher /></RequireRole>} />

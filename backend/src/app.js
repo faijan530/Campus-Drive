@@ -24,8 +24,10 @@ export function createApp() {
   app.use(helmet());
   app.use(
     cors({
-      origin: env.FRONTEND_ORIGIN ? [env.FRONTEND_ORIGIN] : true,
-      credentials: false,
+      origin: function(origin, callback){
+         return callback(null, true);
+      },
+      credentials: true,
     })
   );
   app.use(express.json({ limit: "5mb" }));

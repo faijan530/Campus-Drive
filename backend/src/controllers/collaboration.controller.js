@@ -1,0 +1,216 @@
+import { PartnerRequest } from "../models/PartnerRequest.js";
+import { PartnerApplication } from "../models/PartnerApplication.js";
+import { Doubt } from "../models/Doubt.js";
+import { Conversation } from "../models/Conversation.js";
+import { Message } from "../models/Message.js";
+import { asyncHandler } from "../utils/asyncHandler.js";
+import { badRequest, notFound, forbidden } from "../utils/httpError.js";
+
+// -- Partners --
+
+export const createPartnerRequest = asyncHandler(async (req, res) => {
+  const { title, description, skillsRequired, level, duration } = req.body;
+  if (!title || !description || !level || !duration) throw badRequest("Missing fields");
+
+  const pr = await PartnerRequest.create({
+    userId: req.auth.userId,
+    title, description, skillsRequired, level, duration
+  });
+  res.status(201).json({ request: pr });
+});
+
+export const getPartnerRequests = asyncHandler(async (req, res) => {
+  const requests = await PartnerRequest.find({ status: "Open" })
+    .populate("userId", "name email")
+    .sort({ createdAt: -1 }).lean();
+  res.json({ requests });
+});
+
+export const getPartnerRequestById = asyncHandler(async (req, res) => {
+  const request = await PartnerRequest.findById(req.params.id)
+    .populate("userId", "name email").lean();
+  if (!request) throw notFound("Request not found");
+  
+  let applications = [];
+  if (request.userId._id.toString() === req.auth.userId) {
+    applications = await PartnerApplication.find({ requestId: request._id })
+      .populate("applicantId", "name email").lean();
+  }
+  
+  res.json({ request, applications });
+});
+
+export const applyForPartner = asyncHandler(async (req, res) => {
+  const { message } = req.body;
+  if (!message) throw badRequest("Message is required");
+
+  const reqExists = await PartnerRequest.findById(req.params.id);
+  if (!reqExists) throw notFound("Partner request not found");
+
+  if (reqExists.userId.toString() === req.auth.userId) {
+    throw badRequest("Cannot apply to your own request");
+  }
+
+  const existing = await PartnerApplication.findOne({ requestId: req.params.id, applicantId: req.auth.userId });
+  if (existing) throw badRequest("Already applied");
+
+  const app = await PartnerApplication.create({
+    requestId: req.params.id,
+    applicantId: req.auth.userId,
+    message
+  });
+  res.status(201).json({ application: app });
+});
+
+export const getMyRequests = asyncHandler(async (req, res) => {
+  const requests = await PartnerRequest.find({ userId: req.auth.userId }).sort({ createdAt: -1 }).lean();
+  res.json({ requests });
+});
+
+export const acceptApplication = asyncHandler(async (req, res) => {
+  const app = await PartnerApplication.findById(req.params.appId).populate("requestId");
+  if (!app) throw notFound("Application not found");
+
+  if (app.requestId.userId.toString() !== req.auth.userId) {
+    throw forbidden("Only request owner can accept");
+  }
+
+  app.status = "Accepted";
+  await app.save();
+
+  const conv = await Conversation.create({
+    participants: [app.requestId.userId, app.applicantId],
+    referenceType: "Partner",
+    referenceId: app.requestId._id
+  });
+
+  res.json({ application: app, conversation: conv });
+});
+
+// -- Doubts --
+
+export const createDoubt = asyncHandler(async (req, res) => {
+  const { title, description, category, priority } = req.body;
+  if (!title || !description || !category) throw badRequest("Missing fields");
+
+  const doubt = await Doubt.create({
+    studentId: req.auth.userId,
+    title, description, category, priority: priority || "Normal"
+  });
+
+  const conv = await Conversation.create({
+    participants: [req.auth.userId],
+    referenceType: "Doubt",
+    referenceId: doubt._id
+  });
+
+  res.status(201).json({ doubt, conversationId: conv._id });
+});
+
+export const getDoubts = asyncHandler(async (req, res) => {
+  let query = {};
+  if (req.auth.role === "Student") {
+    query.studentId = req.auth.userId;
+  }
+  const doubts = await Doubt.find(query).populate("studentId teacherId", "name email").sort({ createdAt: -1 }).lean();
+  res.json({ doubts });
+});
+
+export const getDoubtById = asyncHandler(async (req, res) => {
+  const doubt = await Doubt.findById(req.params.id).populate("studentId teacherId", "name email").lean();
+  if (!doubt) throw notFound("Doubt not found");
+
+  const conv = await Conversation.findOne({ referenceType: "Doubt", referenceId: doubt._id }).lean();
+  
+  res.json({ doubt, conversation: conv });
+});
+
+export const resolveDoubt = asyncHandler(async (req, res) => {
+  const doubt = await Doubt.findById(req.params.id);
+  if (!doubt) throw notFound("Doubt not found");
+  
+  doubt.status = "Resolved";
+  await doubt.save();
+  res.json({ doubt });
+});
+
+// -- Conversations/Chats --
+
+export const getMessages = asyncHandler(async (req, res) => {
+  const { convId } = req.params;
+  
+  // Mark all unread messages in this conversation as read by the user
+  await Message.updateMany(
+    { conversationId: convId, senderId: { $ne: req.auth.userId }, readBy: { $ne: req.auth.userId } },
+    { $addToSet: { readBy: req.auth.userId } }
+  );
+
+  const messages = await Message.find({ conversationId: convId })
+    .populate("senderId", "name role")
+    .sort({ createdAt: 1 }).lean();
+  res.json({ messages });
+});
+
+export const postMessage = asyncHandler(async (req, res) => {
+  const { convId } = req.params;
+  const { content } = req.body;
+  
+  const conv = await Conversation.findById(convId);
+  if (!conv) throw notFound("Conversation not found");
+
+  if (!conv.participants.includes(req.auth.userId)) {
+    if (conv.referenceType === "Doubt" && ["Teacher", "Admin"].includes(req.auth.role)) {
+       conv.participants.push(req.auth.userId);
+       await conv.save();
+       await Doubt.findByIdAndUpdate(conv.referenceId, { teacherId: req.auth.userId });
+    } else {
+       throw forbidden("Not part of this conversation");
+    }
+  }
+
+  const msg = await Message.create({
+    conversationId: convId,
+    senderId: req.auth.userId,
+    content
+  });
+
+  const populatedMsg = await msg.populate("senderId", "name role");
+  res.status(201).json({ message: populatedMsg });
+});
+
+export const getMyConversations = asyncHandler(async (req, res) => {
+  const convs = await Conversation.find({ participants: req.auth.userId })
+    .populate("participants", "name role lastSeen")
+    .lean();
+
+  for (let c of convs) {
+    const lastMsg = await Message.findOne({ conversationId: c._id }).sort({ createdAt: -1 }).lean();
+    c.lastMessage = lastMsg ? lastMsg.content : null;
+    c.lastMessageTime = lastMsg ? lastMsg.createdAt : c.createdAt;
+  }
+  
+  convs.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
+
+  res.json({ conversations: convs });
+});
+
+export const getUnreadCount = asyncHandler(async (req, res) => {
+  const convs = await Conversation.find({ participants: req.auth.userId }, '_id').lean();
+  const convIds = convs.map(c => c._id);
+
+  const unreadCount = await Message.countDocuments({
+    conversationId: { $in: convIds },
+    senderId: { $ne: req.auth.userId },
+    readBy: { $ne: req.auth.userId }
+  });
+
+  res.json({ unreadCount });
+});
+
+export const askAiAssistant = asyncHandler(async (req, res) => {
+  const { message } = req.body;
+  if (!message) throw badRequest("Message is required");
+  
+  const response = `🤖 [AI Assistant]: I received your message: "${message.substring(0, 30)}...". Let me help you with your query!`;
+  res.json({ reply: response });
+});

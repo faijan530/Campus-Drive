@@ -58,7 +58,9 @@ export function createApp() {
     ].join(' ');
   };
 
-  app.use(morgan(env.NODE_ENV === "production" ? "combined" : professionalLog));
+  app.use(morgan(env.NODE_ENV === "production" ? "combined" : professionalLog, {
+    skip: (req, res) => req.url.includes("/api/collab/conversations/unread-count")
+  }));
 
   app.get("/health", (_req, res) => res.json({ ok: true }));
 

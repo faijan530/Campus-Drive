@@ -13,7 +13,7 @@ function SidebarNav({ onNavigate }) {
       getUnreadCount(token).then(res => setUnreadCount(res.unreadCount)).catch(() => {});
     };
     fetchUnread();
-    const interval = setInterval(fetchUnread, 15000); // Check every 15s
+    const interval = setInterval(fetchUnread, 60000); // Check every 60s to prevent backend spam
     return () => clearInterval(interval);
   }, [token]);
   

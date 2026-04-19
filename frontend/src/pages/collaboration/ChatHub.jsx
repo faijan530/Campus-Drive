@@ -115,8 +115,12 @@ export default function ChatHub() {
   useEffect(() => {
     if (activeConv && socketRef.current && messages.length > 0) {
       messages.forEach(msg => {
-         if (msg.senderId._id !== user.id && msg.status !== "READ") {
-            socketRef.current.emit("mark-read", { messageId: msg._id, readerId: user.id });
+         // Skip AI messages, check if strictly opposite sender
+         if (msg.senderId._id !== user.id && msg.senderId.role !== "AI" && msg.status !== "READ") {
+            // Also skip numeric temporary IDs
+            if (typeof msg._id === "string" && msg._id.length > 15) {
+               socketRef.current.emit("mark-read", { messageId: msg._id, readerId: user.id });
+            }
          }
       });
     }

@@ -2,6 +2,7 @@ import { createApp } from "./app.js";
 import { env } from "./config/env.js";
 import { connectDb } from "./config/db.js";
 import http from "http";
+import mongoose from "mongoose";
 import { Server } from "socket.io";
 import { Message } from "./models/Message.js";
 import { User } from "./models/User.js";
@@ -70,6 +71,11 @@ async function main() {
     });
 
     socket.on("mark-read", async ({ messageId, readerId }) => {
+       if (!mongoose.Types.ObjectId.isValid(messageId)) {
+          console.log("[Socket] Invalid messageId blocked:", messageId);
+          return;
+       }
+
        const message = await Message.findOneAndUpdate(
          { _id: messageId, status: { $ne: "READ" } },
          { status: "READ" },

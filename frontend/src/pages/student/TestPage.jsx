@@ -521,7 +521,7 @@ export default function TestPage() {
             <div className={`rounded-lg border px-3 py-2 text-sm font-extrabold ${questionRemainingMs <= 60000 ? "border-red-200 bg-red-50 text-red-900" : "border-slate-200 bg-white text-slate-900"}`}>
               <div className="text-center">
                 <div className="text-xs font-semibold text-slate-600">Question {idx + 1}</div>
-                <div>{lockedQuestions.has(q._id) ? "LOCKED" : msToClock(questionRemainingMs)}</div>
+                <div>{q && lockedQuestions.has(q._id) ? "LOCKED" : msToClock(questionRemainingMs)}</div>
               </div>
             </div>
             {violations > 0 && (

@@ -49,11 +49,11 @@ export default function TestAdmin() {
     let bad = 0;
     for (const q of questions) {
       if (
-        !q.question.trim() ||
-        !q.optionA.trim() ||
-        !q.optionB.trim() ||
-        !q.optionC.trim() ||
-        !q.optionD.trim() ||
+        !q.question?.trim() ||
+        !q.optionA?.trim() ||
+        !q.optionB?.trim() ||
+        !q.optionC?.trim() ||
+        !q.optionD?.trim() ||
         !q.correctAnswer
       ) {
         bad += 1;
@@ -191,12 +191,12 @@ export default function TestAdmin() {
                       `/api/test/${testId}/questions`,
                       {
                         questions: questions.map((q) => ({
-                          question: q.question.trim(),
-                          optionA: q.optionA.trim(),
-                          optionB: q.optionB.trim(),
-                          optionC: q.optionC.trim(),
-                          optionD: q.optionD.trim(),
-                          correctAnswer: q.correctAnswer,
+                          question: q.question?.trim() || "",
+                          optionA: q.optionA?.trim() || "",
+                          optionB: q.optionB?.trim() || "",
+                          optionC: q.optionC?.trim() || "",
+                          optionD: q.optionD?.trim() || "",
+                          correctAnswer: q.correctAnswer || "A",
                         })),
                       },
                       token
@@ -230,7 +230,18 @@ export default function TestAdmin() {
                   try {
                     const arr = JSON.parse(raw);
                     if (!Array.isArray(arr) || arr.length !== 30) throw new Error("Must be an array of 30 questions");
-                    setQuestions(arr.map((q, i) => ({ id: `q${i + 1}`, ...createEmptyQuestion(i), ...q })));
+                    setQuestions(arr.map((q, i) => {
+                      const text = q.question || q.text || q.title || "";
+                      return {
+                        id: `q${i + 1}`,
+                        question: String(text),
+                        optionA: String(q.optionA || q.options?.[0] || ""),
+                        optionB: String(q.optionB || q.options?.[1] || ""),
+                        optionC: String(q.optionC || q.options?.[2] || ""),
+                        optionD: String(q.optionD || q.options?.[3] || ""),
+                        correctAnswer: typeof q.correctAnswer === "string" ? q.correctAnswer : "A"
+                      };
+                    }));
                     setInfo("Loaded 30 questions from JSON.");
                     setError("");
                   } catch (err) {
@@ -251,7 +262,7 @@ export default function TestAdmin() {
                   header: "Question",
                   render: (r) => (
                     <Input
-                      value={r.question}
+                      value={r.question || ""}
                       onChange={(e) =>
                         setQuestions((qs) => qs.map((q) => (q.id === r.id ? { ...q, question: e.target.value } : q)))
                       }

@@ -121,11 +121,11 @@ const addQuestionsSchema = z.object({
   questions: z
     .array(
       z.object({
-        question: z.string().min(5).max(600),
-        optionA: z.string().min(1).max(300),
-        optionB: z.string().min(1).max(300),
-        optionC: z.string().min(1).max(300),
-        optionD: z.string().min(1).max(300),
+        question: z.string().min(1).max(6000),
+        optionA: z.string().min(1).max(3000),
+        optionB: z.string().min(1).max(3000),
+        optionC: z.string().min(1).max(3000),
+        optionD: z.string().min(1).max(3000),
         correctAnswer: z.enum(["A", "B", "C", "D"]),
       })
     )

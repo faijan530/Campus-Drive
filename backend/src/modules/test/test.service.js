@@ -98,6 +98,14 @@ export const testService = {
       { $set: { status: TestStatus.COMPLETED } }
     );
 
+    if (test) {
+      try {
+        test.questionCount = await mongoose.model("Question").countDocuments({ testId: test._id });
+      } catch (e) {
+        test.questionCount = 0;
+      }
+    }
+
     return test;
   },
 

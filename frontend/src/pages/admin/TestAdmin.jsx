@@ -230,18 +230,55 @@ export default function TestAdmin() {
                   try {
                     const arr = JSON.parse(raw);
                     if (!Array.isArray(arr) || arr.length !== 30) throw new Error("Must be an array of 30 questions");
-                    setQuestions(arr.map((q, i) => {
-                      const text = q.question || q.text || q.title || "";
+                    
+                    console.log("Parsed JSON:", arr);
+                    
+                    const normalized = arr.map((q, i) => {
+                      // Extract raw text, handling if they pasted array of strings or unknown object keys
+                      let text = "";
+                      if (typeof q === "string") {
+                        text = q;
+                      } else {
+                        text = q.question || q.text || q.title || q.q || q.body || q.content || q.name || q.questionText || "";
+                        if (!text && typeof q === "object") {
+                          text = JSON.stringify(q); // Force display it if completely unmapped!
+                        }
+                      }
+                      
+                      const optA = q.optionA || q.a || q.A || q.optA || q.options?.[0] || q.choices?.[0] || q[1] || "";
+                      const optB = q.optionB || q.b || q.B || q.optB || q.options?.[1] || q.choices?.[1] || q[2] || "";
+                      const optC = q.optionC || q.c || q.C || q.optC || q.options?.[2] || q.choices?.[2] || q[3] || "";
+                      const optD = q.optionD || q.d || q.D || q.optD || q.options?.[3] || q.choices?.[3] || q[4] || "";
+                      let ans = q.correctAnswer || q.answer || q.ans || q.correct || q[5] || "A";
+                      
+                      // Normalize answer to A, B, C, D
+                      if (typeof ans === "string") {
+                        ans = ans.toUpperCase().trim();
+                        if (!["A", "B", "C", "D"].includes(ans)) {
+                          // Try to map numeric or text answers back
+                          if (ans === optA?.toUpperCase()?.trim()) ans = "A";
+                          else if (ans === optB?.toUpperCase()?.trim()) ans = "B";
+                          else if (ans === optC?.toUpperCase()?.trim()) ans = "C";
+                          else if (ans === optD?.toUpperCase()?.trim()) ans = "D";
+                          else ans = "A"; // Default fallback
+                        }
+                      } else {
+                        ans = "A";
+                      }
+
                       return {
                         id: `q${i + 1}`,
                         question: String(text),
-                        optionA: String(q.optionA || q.options?.[0] || ""),
-                        optionB: String(q.optionB || q.options?.[1] || ""),
-                        optionC: String(q.optionC || q.options?.[2] || ""),
-                        optionD: String(q.optionD || q.options?.[3] || ""),
-                        correctAnswer: typeof q.correctAnswer === "string" ? q.correctAnswer : "A"
+                        optionA: optA ? String(optA) : "Option A",
+                        optionB: optB ? String(optB) : "Option B",
+                        optionC: optC ? String(optC) : "Option C",
+                        optionD: optD ? String(optD) : "Option D",
+                        correctAnswer: ans
                       };
-                    }));
+                    });
+                    
+                    console.log("Questions state updated to:", normalized);
+                    setQuestions(normalized);
                     setInfo("Loaded 30 questions from JSON.");
                     setError("");
                   } catch (err) {
@@ -256,11 +293,11 @@ export default function TestAdmin() {
               dense
               caption="Edit each row. Tip: keep questions concise and unambiguous."
               columns={[
-                { key: "n", header: "#" },
+                { key: "n", label: "#" },
                 {
                   key: "question",
-                  header: "Question",
-                  render: (r) => (
+                  label: "Question",
+                  render: (_, r) => (
                     <Input
                       value={r.question || ""}
                       onChange={(e) =>
@@ -272,8 +309,8 @@ export default function TestAdmin() {
                 },
                 {
                   key: "correctAnswer",
-                  header: "Correct",
-                  render: (r) => (
+                  label: "Correct",
+                  render: (_, r) => (
                     <Select
                       value={r.correctAnswer}
                       onChange={(e) =>
@@ -292,7 +329,7 @@ export default function TestAdmin() {
                 },
               ]}
               rows={questions.map((q, i) => ({ ...q, n: i + 1 }))}
-              emptyLabel="No questions."
+              emptyText="No questions."
             />
 
             {/* Option editor below (focused index) */}

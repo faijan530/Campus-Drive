@@ -87,83 +87,115 @@ export default function ResultPage() {
   }
 
   return (
-    <div className="space-y-6 max-w-4xl mx-auto">
+    <div 
+      className="space-y-8 max-w-5xl mx-auto p-4 text-gray-700" 
+      style={{ animation: 'fadeIn 0.6s ease-out forwards' }}
+    >
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+      `}</style>
+      
       {/* Header */}
-      <div className="text-center">
-        <h1 className="text-2xl font-extrabold text-slate-900">🎉 Test Completed!</h1>
-        <p className="text-sm text-slate-600 mt-1">Here are your results</p>
+      <div className="text-center mt-6">
+        <h1 className="text-4xl font-extrabold text-slate-900 tracking-tight flex items-center justify-center gap-3">
+          <span>🎉</span> Test Completed!
+        </h1>
+        <p className="text-lg text-slate-500 mt-2 font-medium">Here are your results</p>
       </div>
 
       {/* Main Score Card */}
-      <Card className="p-6 overflow-hidden">
-        <div className="grid md:grid-cols-2 gap-6 items-center">
+      <div className="bg-white rounded-2xl shadow-lg border border-slate-100 p-8 overflow-hidden transition-all duration-300 hover:shadow-xl">
+        <div className="grid md:grid-cols-2 gap-8 items-center">
           {/* Left - Progress Ring */}
-          <div className="flex flex-col items-center justify-center">
-            <ProgressRing value={scorePercent} label={perf.label} sublabel={`${scorePercent}%`} size={160} />
-            <div className={`text-4xl font-black mt-4 ${grade.color}`}>{grade.grade}</div>
+          <div className="flex flex-col items-center justify-center space-y-4 relative">
+            <div className="relative p-2 rounded-full transform transition-all duration-500 hover:scale-105">
+              <ProgressRing value={scorePercent} label={perf.label} sublabel={`${scorePercent}%`} size={180} />
+            </div>
+            <div className="text-center">
+               <div className={`text-5xl font-black ${grade.color} drop-shadow-sm`}>{grade.grade}</div>
+               <div className="text-sm font-bold text-slate-400 mt-1 uppercase tracking-widest">Performance</div>
+            </div>
           </div>
 
-          {/* Right - Details */}
-          <div className="space-y-4">
-            <div>
-              <div className="text-xs font-bold text-slate-500 uppercase tracking-wide">Test</div>
-              <div className="text-lg font-extrabold text-slate-900">{result?.testTitle || "Test"}</div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-xs font-semibold text-slate-500">Score</div>
-                <div className="text-xl font-extrabold text-slate-900">
-                  {result?.score ?? 0} <span className="text-sm font-normal text-slate-500">/ {result?.totalQuestions ?? result?.maxScore ?? 100}</span>
-                </div>
+          {/* Right - Cards */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="bg-white rounded-xl shadow-md p-5 border border-slate-100 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">📋</span>
+                <span className="text-sm font-bold text-gray-500">Test Name</span>
               </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-xs font-semibold text-slate-500">Correct</div>
-                <div className="text-xl font-extrabold text-emerald-600">
-                  {result?.correctCount ?? (Math.round((result?.score / (result?.totalQuestions || 1)) * (result?.totalQuestions || 1)) || 0)}
-                </div>
+              <div className="text-base font-extrabold text-slate-900 truncate" title={result?.testTitle || "Evaluation"}>
+                {result?.testTitle || "Evaluation"}
               </div>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-xs font-semibold text-slate-500">Duration</div>
-                <div className="text-sm font-extrabold text-slate-900">
-                  {result?.durationMinutes ? `${result.durationMinutes} min` : "—"}
-                </div>
+            <div className="bg-white rounded-xl shadow-md p-5 border border-slate-100 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">🎯</span>
+                <span className="text-sm font-bold text-gray-500">Score</span>
               </div>
-              <div className="rounded-lg bg-slate-50 p-3">
-                <div className="text-xs font-semibold text-slate-500">Submitted</div>
-                <div className="text-xs font-semibold text-slate-900">
-                  {result?.submittedAt ? new Date(result.submittedAt).toLocaleString() : "—"}
-                </div>
+              <div className="text-xl font-extrabold text-slate-900">
+                {result?.score ?? 0} <span className="text-sm font-medium text-slate-400">/ {result?.totalQuestions ?? result?.maxScore ?? 100}</span>
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-5 border border-slate-100 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">✅</span>
+                <span className="text-sm font-bold text-gray-500">Correct</span>
+              </div>
+              <div className="text-xl font-extrabold text-emerald-500">
+                {result?.correctCount ?? (Math.round((result?.score / (result?.totalQuestions || 1)) * (result?.totalQuestions || 1)) || 0)}
+              </div>
+            </div>
+
+            <div className="bg-white rounded-xl shadow-md p-5 border border-slate-100 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">⏱️</span>
+                <span className="text-sm font-bold text-gray-500">Duration</span>
+              </div>
+              <div className="text-lg font-extrabold text-slate-900">
+                {result?.durationMinutes ? `${result.durationMinutes} min` : "—"}
+              </div>
+            </div>
+            
+            <div className="col-span-2 bg-white rounded-xl shadow-md p-5 border border-slate-100 hover:-translate-y-1 transition-all duration-300">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="text-lg">📅</span>
+                <span className="text-sm font-bold text-gray-500">Submitted</span>
+              </div>
+              <div className="text-sm font-extrabold text-slate-900">
+                {result?.submittedAt ? new Date(result.submittedAt).toLocaleString() : "—"}
               </div>
             </div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Performance Message */}
-      <Card className={`p-6 border-l-4 ${
+      <div className={`p-6 rounded-2xl border-l-4 shadow-sm transition-all duration-300 hover:shadow-md ${
         perf.tone === "emerald" ? "border-emerald-500 bg-emerald-50" :
         perf.tone === "blue" ? "border-blue-500 bg-blue-50" :
         perf.tone === "amber" ? "border-amber-500 bg-amber-50" :
         "border-red-500 bg-red-50"
       }`}>
-        <div className="flex items-start gap-3">
-          <span className="text-2xl">
+        <div className="flex items-start gap-4">
+          <span className="text-4xl">
             {perf.tone === "emerald" ? "🏆" :
              perf.tone === "blue" ? "👍" :
-             perf.tone === "amber" ? "📈" : "💪"}
+             perf.tone === "amber" ? "📈" : "⚠️"}
           </span>
           <div>
-            <div className={`text-lg font-extrabold ${
+            <div className={`text-xl font-bold ${
               perf.tone === "emerald" ? "text-emerald-900" :
               perf.tone === "blue" ? "text-blue-900" :
               perf.tone === "amber" ? "text-amber-900" :
               "text-red-900"
             }`}>{perf.label}</div>
-            <div className={`text-sm mt-1 ${
+            <div className={`text-sm font-medium mt-1 ${
               perf.tone === "emerald" ? "text-emerald-700" :
               perf.tone === "blue" ? "text-blue-700" :
               perf.tone === "amber" ? "text-amber-700" :
@@ -171,38 +203,44 @@ export default function ResultPage() {
             }`}>{perf.message}</div>
           </div>
         </div>
-      </Card>
+      </div>
 
       {/* Stats Grid */}
       {result?.stats && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-          <Card className="p-4 text-center">
-            <div className="text-2xl font-extrabold text-slate-900">{result.stats.totalQuestions || "—"}</div>
-            <div className="text-xs font-semibold text-slate-500">Questions</div>
-          </Card>
-          <Card className="p-4 text-center">
-            <div className="text-2xl font-extrabold text-emerald-600">{result.stats.answered || "—"}</div>
-            <div className="text-xs font-semibold text-slate-500">Answered</div>
-          </Card>
-          <Card className="p-4 text-center">
-            <div className="text-2xl font-extrabold text-amber-600">{result.stats.unanswered || "—"}</div>
-            <div className="text-xs font-semibold text-slate-500">Unanswered</div>
-          </Card>
-          <Card className="p-4 text-center">
-            <div className="text-2xl font-extrabold text-slate-900">{result.stats.timeUsed || "—"}</div>
-            <div className="text-xs font-semibold text-slate-500">Time Used</div>
-          </Card>
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 text-center hover:-translate-y-1 transition-all duration-300">
+            <div className="text-3xl font-black text-slate-900 mb-1">{result.stats.totalQuestions || "—"}</div>
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Questions</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 text-center hover:-translate-y-1 transition-all duration-300">
+            <div className="text-3xl font-black text-emerald-500 mb-1">{result.stats.answered || "—"}</div>
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Answered</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 text-center hover:-translate-y-1 transition-all duration-300">
+            <div className="text-3xl font-black text-amber-500 mb-1">{result.stats.unanswered || "—"}</div>
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Unanswered</div>
+          </div>
+          <div className="bg-white p-5 rounded-2xl shadow-md border border-slate-100 text-center hover:-translate-y-1 transition-all duration-300">
+            <div className="text-3xl font-black text-slate-900 mb-1">{result.stats.timeUsed || "—"}</div>
+            <div className="text-xs font-bold text-gray-500 uppercase tracking-widest">Time Used</div>
+          </div>
         </div>
       )}
 
       {/* Action Buttons */}
-      <div className="flex flex-wrap gap-3 justify-center">
-        <Button onClick={() => navigate("/app/profile")}>
-          📊 Back to Dashboard
-        </Button>
-        <Button variant="secondary" onClick={() => navigate("/exam")}>
-          📝 Take Another Test
-        </Button>
+      <div className="flex flex-col sm:flex-row gap-4 justify-center pt-6 pb-12">
+        <button 
+          onClick={() => navigate("/app/profile")}
+          className="px-8 py-3 rounded-xl font-bold text-white bg-gradient-to-r from-purple-500 to-pink-500 shadow-lg hover:shadow-xl hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+        >
+          <span>📊</span> Back to Dashboard
+        </button>
+        <button 
+          onClick={() => navigate("/exam/test")}
+          className="px-8 py-3 rounded-xl font-bold text-slate-700 bg-white border border-gray-300 shadow-sm hover:bg-gray-50 hover:shadow-md hover:scale-105 transition-all duration-300 flex items-center justify-center gap-2"
+        >
+          <span>📝</span> Take Another Test
+        </button>
       </div>
     </div>
   );

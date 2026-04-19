@@ -27,6 +27,19 @@ async function main() {
     });
   }
 
+  const adminEmail = "admin@campusdrive.ai";
+  let adminUser = await User.findOne({ email: adminEmail }).select("+passwordHash");
+  if (!adminUser) {
+    const adminPasswordHash = await User.hashPassword("Admin@1234");
+    adminUser = await User.create({
+      email: adminEmail,
+      passwordHash: adminPasswordHash,
+      name: "System Admin",
+      role: Roles.ADMIN,
+      isActive: true,
+    });
+  }
+
   await Profile.findOneAndUpdate(
     { userId: user._id },
     {
@@ -77,6 +90,7 @@ async function main() {
 
   // eslint-disable-next-line no-console
   console.log("[seed] created/updated student:", { email, password: "CampusDrive@123" });
+  console.log("[seed] created/updated admin:", { email: adminEmail, password: "Admin@1234" });
   process.exit(0);
 }
 

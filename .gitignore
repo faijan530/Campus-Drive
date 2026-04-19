@@ -18,7 +18,6 @@ frontend/node_modules/
 .env.production.local
 backend/.env
 frontend/.env
-**/config/env.js
 
 # Build Output
 dist/

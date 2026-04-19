@@ -76,8 +76,9 @@ export default function ChatHub() {
              updated[idx] = msg;
              return updated;
           }
-          return prev;
+          return [...prev, msg];
        });
+       setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
     });
 
     socket.on("message-read", (readMsg) => {

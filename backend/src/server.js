@@ -45,8 +45,8 @@ async function main() {
     });
 
     socket.on("send-message", async (data) => {
-       // data: { senderId, receiverId, content, conversationId }
-       const { senderId, receiverId, content, conversationId } = data;
+       // data: { senderId, receiverId, content, conversationId, tempId }
+       const { senderId, receiverId, content, conversationId, tempId } = data;
        
        let status = "SENT";
        if (onlineUsers.has(receiverId)) {
@@ -62,12 +62,14 @@ async function main() {
        });
 
        const populatedMsg = await message.populate("senderId", "name role");
+       const msgObj = populatedMsg.toObject();
+       if (tempId) msgObj.tempId = tempId;
 
        const receiverSocket = onlineUsers.get(receiverId);
        if (receiverSocket) {
-          io.to(receiverSocket).emit("receive-message", populatedMsg);
+          io.to(receiverSocket).emit("receive-message", msgObj);
        }
-       socket.emit("message-status-update", populatedMsg);
+       socket.emit("message-status-update", msgObj);
     });
 
     socket.on("mark-read", async ({ messageId, readerId }) => {

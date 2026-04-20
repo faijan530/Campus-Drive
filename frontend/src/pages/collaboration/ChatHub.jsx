@@ -38,6 +38,13 @@ export default function ChatHub() {
 
   const bottomRef = useRef(null);
 
+  // Force re-render every minute so "just now" updates visually
+  const [, setTick] = useState(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTick(t => t + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
   useEffect(() => {
     fetchConversations();
 
@@ -172,32 +179,27 @@ export default function ChatHub() {
     }, 2000);
   };
 
-  // Add AI handling
-  const [askingAi, setAskingAi] = useState(false);
-  const handleAskAI = async () => {
-    if (!activeConv) return;
-    setAskingAi(true);
-    try {
-      // Create a message payload
-      const payload = { content: "Hey AI, need help!" };
-      const res = await askAiAssistant({ message: messages[messages.length - 1]?.content || "Hello" }, token);
-      
-      // Inject AI logic into local state visually, or create actual message
-      // Note: we can visually render AI reply directly
-      const aiMsg = { _id: Date.now(), senderId: { _id: "AI", name: "AI Assistant", role: "AI" }, content: res.reply, createdAt: new Date() };
-      setMessages(prev => [...prev, aiMsg]);
-      setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
-    } catch(err) {
-      console.error(err);
-    } finally {
-      setAskingAi(false);
-    }
-  };
-
   const handleSend = async (e) => {
     e.preventDefault();
     if (!reply.trim() || !activeConv) return;
     setSending(true);
+    
+    const currentReply = reply;
+    setReply("");
+    
+    // Optimistic UI Append
+    const tempId = Date.now().toString();
+    const optimisticMsg = {
+      _id: tempId,
+      tempId,
+      senderId: { _id: user.id, name: user.name, role: user.role },
+      content: currentReply,
+      createdAt: new Date(),
+      status: "SENDING"
+    };
+    setMessages(prev => [...prev, optimisticMsg]);
+    setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
+
     try {
       const otherParticipants = activeConv.participants.filter(p => p._id !== user.id);
       otherParticipants.forEach(p => {
@@ -209,16 +211,16 @@ export default function ChatHub() {
             conversationId: activeConv._id,
             senderId: user.id,
             receiverId: otherParticipants[0]?._id,
-            content: reply
+            content: currentReply,
+            tempId
          });
          // Optimistic append, but the server will bounce back message-status-update
          // We can just rely on the server bound event or fetchMessages
       } else {
-         await postMessage(activeConv._id, { content: reply }, token);
+         await postMessage(activeConv._id, { content: currentReply }, token);
          fetchMessages(activeConv._id);
       }
       
-      setReply("");
       fetchConversations(); // refresh last messages
     } catch (err) {
       console.error(err);
@@ -292,9 +294,6 @@ export default function ChatHub() {
                    );
                 })}
               </div>
-              <button onClick={handleAskAI} className="text-xs font-bold px-3 py-1.5 bg-indigo-50 text-indigo-700 rounded-md border border-indigo-100 hover:bg-indigo-100 transition-colors">
-                {askingAi ? "Asking..." : "🤖 Ask AI"}
-              </button>
             </div>
 
             <div className="flex-1 p-4 overflow-y-auto space-y-4 bg-slate-50/50">
@@ -331,7 +330,7 @@ export default function ChatHub() {
                         <span>{msg.content}</span>
                         {isMe && (
                           <div className="text-[10px] text-right mt-1 opacity-70">
-                            {msg.status === "SENT" ? "✔" : msg.status === "DELIVERED" ? "✔✔" : <span className="text-blue-300 font-bold">✔✔</span>}
+                            {msg.status === "SENDING" ? <span className="text-white/60">🕒</span> : msg.status === "SENT" ? "✔" : msg.status === "DELIVERED" ? "✔✔" : <span className="text-blue-300 font-bold">✔✔</span>}
                           </div>
                         )}
                       </div>

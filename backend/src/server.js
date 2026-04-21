@@ -106,6 +106,53 @@ async function main() {
        }
     });
 
+    // 📞 WebRTC Signaling ──────────────────────────────────────
+    
+    // 📞 Call user
+    socket.on("call-user", ({ to, offer, callType, fromInfo }) => {
+      const receiverSocket = onlineUsers.get(to);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("incoming-call", {
+          from: fromInfo.id,
+          fromName: fromInfo.name,
+          offer,
+          callType // "audio" or "video"
+        });
+      }
+    });
+
+    // ✅ Accept call
+    socket.on("answer-call", ({ to, answer }) => {
+      const receiverSocket = onlineUsers.get(to);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("call-accepted", { answer });
+      }
+    });
+
+    // ❌ Reject call
+    socket.on("reject-call", ({ to }) => {
+      const receiverSocket = onlineUsers.get(to);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("call-rejected");
+      }
+    });
+
+    // 🔁 ICE candidates
+    socket.on("ice-candidate", ({ to, candidate }) => {
+      const receiverSocket = onlineUsers.get(to);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("ice-candidate", { candidate });
+      }
+    });
+
+    // 📴 End call
+    socket.on("end-call", ({ to }) => {
+      const receiverSocket = onlineUsers.get(to);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("call-ended");
+      }
+    });
+
     socket.on("disconnect", async () => {
       let disconnectedUserId = null;
       for (const [userId, sockId] of onlineUsers.entries()) {

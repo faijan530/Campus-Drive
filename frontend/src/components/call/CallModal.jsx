@@ -41,7 +41,12 @@ export default function CallModal({ call, socket, onClose }) {
             console.log("[WebRTC] Connection State:", pcRef.current.connectionState);
             if (pcRef.current.connectionState === "connected") setCallStatus("Connected");
             if (pcRef.current.connectionState === "failed") setCallStatus("Connection Failed");
+            if (pcRef.current.connectionState === "connecting") setCallStatus("Connecting Path...");
         };
+    }
+
+    if (call.accepted && !call.isIncoming && callStatus === "Ringing...") {
+        setCallStatus("Connecting...");
     }
 
     const peer = pcRef.current;

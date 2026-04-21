@@ -112,29 +112,25 @@ async function main() {
     
     // 📞 Call user (Initiate request)
     socket.on("call_user", ({ to, callType, fromInfo }) => {
+      console.log(`[CALL] ${fromInfo.name} (${socket.id}) is calling user ${to}`);
       const receiverSocket = onlineUsers.get(to);
       if (receiverSocket) {
         io.to(receiverSocket).emit("incoming_call", {
           from: fromInfo.id,
           fromName: fromInfo.name,
-          callType // "audio" or "video"
+          callType
         });
       }
     });
 
-    // ✅ Accept call
+    // ✅ Accept call / Signal Exchange
     socket.on("call_accepted", ({ to, signal, answer }) => {
+      console.log(`[SIGNAL] Signal from ${socket.id} to user ${to} (Types: ${signal?.type || 'answer-only'})`);
       const receiverSocket = onlineUsers.get(to);
       if (receiverSocket) {
         io.to(receiverSocket).emit("call_accepted", { signal, answer });
-      }
-    });
-
-    // ❌ Reject call
-    socket.on("call_rejected", ({ to }) => {
-      const receiverSocket = onlineUsers.get(to);
-      if (receiverSocket) {
-        io.to(receiverSocket).emit("call_rejected");
+      } else {
+        console.log(`[SIGNAL] Receiver ${to} is offline`);
       }
     });
 
@@ -146,8 +142,18 @@ async function main() {
       }
     });
 
+    // ❌ Reject call
+    socket.on("call_rejected", ({ to }) => {
+      console.log(`[CALL] Call rejected by ${socket.id} for user ${to}`);
+      const receiverSocket = onlineUsers.get(to);
+      if (receiverSocket) {
+        io.to(receiverSocket).emit("call_rejected");
+      }
+    });
+
     // 📴 End call
     socket.on("end_call", ({ to }) => {
+      console.log(`[CALL] Call ended by ${socket.id}`);
       const receiverSocket = onlineUsers.get(to);
       if (receiverSocket) {
         io.to(receiverSocket).emit("end_call");

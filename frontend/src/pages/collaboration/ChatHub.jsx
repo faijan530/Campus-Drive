@@ -64,36 +64,34 @@ export default function ChatHub() {
 
     // 📞 Call Events
     socket.on("incoming_call", (data) => {
-       console.log("Incoming Call Request:", data);
+       console.log("[Signal] Incoming Call Request:", data);
        setIncomingCall(data);
     });
 
     socket.on("call_accepted", (data) => {
-       console.log("Call Accepted by Receiver:", data);
+       console.log("[Signal] Call Accepted notification received:", data);
        // Caller side: Receiver has accepted, we transition to CallModal
-       // The CallModal will handle the WebRTC negotiation
-       setActiveCall({
-          from: data.from || activeCall?.from,
-          fromName: data.fromName || activeCall?.fromName,
-          callType: activeCall?.callType,
-          isIncoming: false,
-          accepted: true
+       setActiveCall((prev) => {
+          if (!prev) return null;
+          return { ...prev, accepted: true };
        });
     });
 
     socket.on("call_rejected", () => {
+       console.log("[Signal] Call Rejected");
        setIncomingCall(null);
        setActiveCall(null);
        setPendingCall(null);
     });
 
     socket.on("end_call", () => {
+       console.log("[Signal] Call Ended");
        setIncomingCall(null);
        setActiveCall(null);
     });
 
     return () => socket.disconnect();
-  }, [token, user.id, activeCall]);
+  }, [token, user.id]);
 
   useEffect(() => {
     if (activeConv) fetchMessages(activeConv._id);

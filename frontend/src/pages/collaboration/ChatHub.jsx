@@ -128,7 +128,7 @@ export default function ChatHub() {
          if (msg.senderId._id !== user.id && msg.senderId.role !== "AI" && msg.status !== "READ") {
             // Also skip numeric temporary IDs
             if (typeof msg._id === "string" && msg._id.length > 15) {
-               socketRef.current.emit("mark-read", { messageId: msg._id, readerId: user.id });
+               socketRef.current.emit("mark-read", { messageId: msg._id.toString(), readerId: user.id.toString() });
             }
          }
       });
@@ -181,15 +181,15 @@ export default function ChatHub() {
   const handleTyping = (e) => {
     setReply(e.target.value);
     if (!activeConv || !socketRef.current) return;
-    const otherParticipants = activeConv.participants.filter(p => p._id !== user.id);
+    const otherParticipants = activeConv.participants.filter(p => p._id.toString() !== user.id.toString());
     otherParticipants.forEach(p => {
-       socketRef.current.emit("typing", { senderId: user.id, receiverId: p._id });
+       socketRef.current.emit("typing", { senderId: user.id.toString(), receiverId: p._id.toString() });
     });
 
     clearTimeout(window.typingTimeout);
     window.typingTimeout = setTimeout(() => {
        otherParticipants.forEach(p => {
-         socketRef.current.emit("stop-typing", { senderId: user.id, receiverId: p._id });
+         socketRef.current.emit("stop-typing", { senderId: user.id.toString(), receiverId: p._id.toString() });
        });
     }, 2000);
   };
@@ -216,16 +216,16 @@ export default function ChatHub() {
     setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
 
     try {
-      const otherParticipants = activeConv.participants.filter(p => p._id !== user.id);
+      const otherParticipants = activeConv.participants.filter(p => p._id.toString() !== user.id.toString());
       otherParticipants.forEach(p => {
-         socketRef.current?.emit("stop-typing", { senderId: user.id, receiverId: p._id });
+         socketRef.current?.emit("stop-typing", { senderId: user.id.toString(), receiverId: p._id.toString() });
       });
 
       if (socketRef.current) {
          socketRef.current.emit("send-message", {
             conversationId: activeConv._id,
-            senderId: user.id,
-            receiverId: otherParticipants[0]?._id,
+            senderId: user.id.toString(),
+            receiverId: otherParticipants[0]?._id?.toString(),
             content: currentReply,
             tempId
          });
@@ -279,9 +279,9 @@ export default function ChatHub() {
         
         <div className="flex-1 overflow-y-auto custom-scrollbar px-4 pb-6 space-y-2 mt-4">
           {filteredConversations.map((c) => {
-            const otherUser = c.participants.find(p => p._id !== user.id) || c.participants[0];
+            const otherUser = c.participants.find(p => p._id.toString() !== user.id.toString()) || c.participants[0];
             const isActive = activeConv?._id === c._id;
-            const isOnline = otherUser && onlineUsers.includes(otherUser._id);
+            const isOnline = otherUser && onlineUsers.some(id => id.toString() === otherUser._id.toString());
             
             return (
               <div
@@ -348,7 +348,7 @@ export default function ChatHub() {
                       alt="avatar"
                     />
                   </div>
-                  {onlineUsers.includes(activeConv.participants.find(p => p._id !== user.id)?._id) && 
+                  {onlineUsers.some(id => id.toString() === (activeConv.participants.find(p => p._id.toString() !== user.id.toString())?._id?.toString())) && 
                     <span className="absolute -bottom-1 -right-1 w-5 h-5 bg-emerald-500 border-4 border-white rounded-full online-glow shadow-md"></span>
                   }
                 </div>
@@ -357,8 +357,8 @@ export default function ChatHub() {
                     {activeConv.participants.find(p => p._id !== user.id)?.name || "Just You"}
                   </h3>
                   <div className="flex items-center gap-2">
-                    <span className={`text-[11px] font-black uppercase tracking-[0.1em] ${onlineUsers.includes(activeConv.participants.find(p => p._id !== user.id)?._id) ? "text-emerald-500 animate-pulse" : "text-slate-300"}`}>
-                      {onlineUsers.includes(activeConv.participants.find(p => p._id !== user.id)?._id) ? "Live Now" : "Currently Offline"}
+                    <span className={`text-[11px] font-black uppercase tracking-[0.1em] ${onlineUsers.some(id => id.toString() === (activeConv.participants.find(p => p._id.toString() !== user.id.toString())?._id?.toString())) ? "text-emerald-500 animate-pulse" : "text-slate-300"}`}>
+                      {onlineUsers.some(id => id.toString() === (activeConv.participants.find(p => p._id.toString() !== user.id.toString())?._id?.toString())) ? "Live Now" : "Currently Offline"}
                     </span>
                   </div>
                 </div>
@@ -380,7 +380,7 @@ export default function ChatHub() {
             {/* Message Thread */}
             <div className="flex-1 p-8 overflow-y-auto space-y-6 custom-scrollbar z-20 relative">
               {messages.map((msg, index) => {
-                const isMe = msg.senderId._id === user?.id;
+                const isMe = msg.senderId?._id?.toString() === user?.id?.toString();
                 const isFirst = index === 0 || messages[index - 1].senderId._id !== msg.senderId._id;
 
                 return (
@@ -400,9 +400,12 @@ export default function ChatHub() {
                               {msg.status === "SENDING" ? (
                                 <svg className="w-3.5 h-3.5 text-white/50 animate-spin" fill="none" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
                               ) : msg.status === "READ" ? (
-                                <svg className="w-4.5 h-4.5 text-emerald-300" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                <div className="flex -space-x-2">
+                                  <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                  <svg className="w-4 h-4 text-emerald-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
+                                </div>
                               ) : (
-                                <svg className={`w-4.5 h-4.5 ${msg.status === "DELIVERED" ? "text-white/80" : "text-white/30"}`} viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/></svg>
+                                <svg className={`w-4 h-4 ${msg.status === "DELIVERED" ? "text-white/80" : "text-white/40"}`} fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7"/></svg>
                               )}
                            </div>
                         )}
@@ -412,7 +415,7 @@ export default function ChatHub() {
                 );
               })}
               
-              {activeConv.participants.filter(p => typingUsers.has(p._id)).map((p) => (
+              {activeConv.participants.filter(p => typingUsers.has(p._id.toString())).map((p) => (
                  <div key={p._id} className="ml-5 flex items-center gap-4 py-4 animate-fade-in">
                     <div className="flex gap-2 bg-white/80 backdrop-blur shadow-sm border border-white rounded-full p-2.5 px-5">
                       <span className="w-2 h-2 bg-indigo-500 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></span>

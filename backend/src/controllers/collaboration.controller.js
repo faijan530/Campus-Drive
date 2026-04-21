@@ -78,11 +78,17 @@ export const acceptApplication = asyncHandler(async (req, res) => {
   app.status = "Accepted";
   await app.save();
 
-  const conv = await Conversation.create({
-    participants: [app.requestId.userId, app.applicantId],
-    referenceType: "Partner",
-    referenceId: app.requestId._id
+  let conv = await Conversation.findOne({
+    participants: { $all: [app.requestId.userId, app.applicantId], $size: 2 }
   });
+
+  if (!conv) {
+    conv = await Conversation.create({
+      participants: [app.requestId.userId, app.applicantId],
+      referenceType: "Partner",
+      referenceId: app.requestId._id
+    });
+  }
 
   res.json({ application: app, conversation: conv });
 });
@@ -174,37 +180,70 @@ export const postMessage = asyncHandler(async (req, res) => {
     content
   });
 
+  conv.lastMessage = content;
+  conv.lastMessageAt = new Date();
+
+  const otherParticipants = conv.participants.filter(p => p.toString() !== req.auth.userId);
+  otherParticipants.forEach(pId => {
+    const key = pId.toString();
+    conv.unreadCount.set(key, (conv.unreadCount.get(key) || 0) + 1);
+  });
+  await conv.save();
+
   const populatedMsg = await msg.populate("senderId", "name role");
   res.status(201).json({ message: populatedMsg });
 });
 
 export const getMyConversations = asyncHandler(async (req, res) => {
   const convs = await Conversation.find({ participants: req.auth.userId })
-    .populate("participants", "name role lastSeen")
+    .populate("participants", "name avatar role lastSeen")
+    .sort({ lastMessageAt: -1 })
     .lean();
-
-  for (let c of convs) {
-    const lastMsg = await Message.findOne({ conversationId: c._id }).sort({ createdAt: -1 }).lean();
-    c.lastMessage = lastMsg ? lastMsg.content : null;
-    c.lastMessageTime = lastMsg ? lastMsg.createdAt : c.createdAt;
-  }
-  
-  convs.sort((a, b) => new Date(b.lastMessageTime) - new Date(a.lastMessageTime));
 
   res.json({ conversations: convs });
 });
 
 export const getUnreadCount = asyncHandler(async (req, res) => {
-  const convs = await Conversation.find({ participants: req.auth.userId }, '_id').lean();
-  const convIds = convs.map(c => c._id);
+  const convs = await Conversation.find({ participants: req.auth.userId }, 'unreadCount').lean();
+  let total = 0;
+  for (const conv of convs) {
+    if (conv.unreadCount && conv.unreadCount[req.auth.userId]) {
+      total += conv.unreadCount[req.auth.userId];
+    }
+  }
 
-  const unreadCount = await Message.countDocuments({
-    conversationId: { $in: convIds },
-    senderId: { $ne: req.auth.userId },
-    readBy: { $ne: req.auth.userId }
+  res.json({ unreadCount: total });
+});
+
+export const openConversation = asyncHandler(async (req, res) => {
+  const { convId } = req.params;
+  const userId = req.auth.userId;
+
+  const convo = await Conversation.findById(convId);
+  if (!convo) throw notFound("Conversation not found");
+
+  convo.unreadCount.set(userId.toString(), 0);
+  await convo.save();
+
+  res.json({ success: true });
+});
+
+export const getOrCreateDirectConversation = asyncHandler(async (req, res) => {
+  const { userId } = req.params;
+  const currentUserId = req.auth.userId;
+
+  let convo = await Conversation.findOne({
+    participants: { $all: [currentUserId, userId], $size: 2 }
   });
 
-  res.json({ unreadCount });
+  if (!convo) {
+    convo = await Conversation.create({
+      participants: [currentUserId, userId],
+      referenceType: "General",
+    });
+  }
+
+  res.json({ conversation: convo });
 });
 
 export const askAiAssistant = asyncHandler(async (req, res) => {

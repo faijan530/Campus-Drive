@@ -17,3 +17,5 @@ export const getUnreadCount = (token) => api.get("/api/collab/conversations/unre
 export const getMessages = (convId, token) => api.get(`/api/collab/conversations/${convId}/messages`, token);
 export const postMessage = (convId, data, token) => api.post(`/api/collab/conversations/${convId}/messages`, data, token);
 export const askAiAssistant = (data, token) => api.post("/api/collab/ai-assistant", data, token);
+export const openConversation = (convId, token) => api.post(`/api/collab/conversations/${convId}/open`, {}, token);
+export const getOrCreateDirectConversation = (userId, token) => api.post(`/api/collab/conversations/direct/${userId}`, {}, token);

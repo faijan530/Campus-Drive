@@ -6,7 +6,8 @@ import { Roles } from "../utils/roles.js";
 import {
   createPartnerRequest, getPartnerRequests, getPartnerRequestById, applyForPartner, getMyRequests, acceptApplication,
   createDoubt, getDoubts, getDoubtById, resolveDoubt,
-  getMessages, postMessage, getMyConversations, getUnreadCount, askAiAssistant
+  getMessages, postMessage, getMyConversations, getUnreadCount, askAiAssistant,
+  openConversation, getOrCreateDirectConversation
 } from "../controllers/collaboration.controller.js";
 
 export const collabRoutes = Router();
@@ -32,6 +33,8 @@ collabRoutes.get("/conversations/unread-count", getUnreadCount);
 collabRoutes.get("/conversations", getMyConversations);
 collabRoutes.get("/conversations/:convId/messages", getMessages);
 collabRoutes.post("/conversations/:convId/messages", postMessage);
+collabRoutes.post("/conversations/:convId/open", openConversation);
+collabRoutes.post("/conversations/direct/:userId", getOrCreateDirectConversation);
 
 // AI Assistant
 collabRoutes.post("/ai-assistant", askAiAssistant);

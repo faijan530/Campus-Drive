@@ -6,6 +6,7 @@ import mongoose from "mongoose";
 import { Server } from "socket.io";
 import { Message } from "./models/Message.js";
 import { User } from "./models/User.js";
+import { Conversation } from "./models/Conversation.js";
 
 export const onlineUsers = new Map(); // userId -> socket.id
 
@@ -45,7 +46,6 @@ async function main() {
     });
 
     socket.on("send-message", async (data) => {
-       // data: { senderId, receiverId, content, conversationId, tempId }
        const { senderId, receiverId, content, conversationId, tempId } = data;
        
        let status = "SENT";
@@ -53,13 +53,27 @@ async function main() {
           status = "DELIVERED";
        }
 
-       // We assume the caller sends valid IDs
        const message = await Message.create({
          conversationId,
          senderId,
          content,
          status
        });
+
+       try {
+         const conv = await Conversation.findById(conversationId);
+         if (conv) {
+           conv.lastMessage = content;
+           conv.lastMessageAt = new Date();
+           const key = receiverId ? receiverId.toString() : null;
+           if (key) {
+             conv.unreadCount.set(key, (conv.unreadCount.get(key) || 0) + 1);
+           }
+           await conv.save();
+         }
+       } catch (err) {
+         console.error("Failed to update conversation socket:", err);
+       }
 
        const populatedMsg = await message.populate("senderId", "name role");
        const msgObj = populatedMsg.toObject();

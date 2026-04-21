@@ -163,16 +163,28 @@ export default function ChatHub() {
     } catch (err) { console.error(err); } finally { setSending(false); }
   };
 
+  // WebRTC confirmation state
+  const [pendingCall, setPendingCall] = useState(null);
+
   const initiateCall = async (type) => {
     if (!activeConv || !socketRef.current) return;
     const other = activeConv.participants.find((p) => p._id.toString() !== user.id.toString());
+    
+    // Close confirmation
+    setPendingCall(null);
+    
+    // Initializing Peer Connection
     const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
     const stream = await navigator.mediaDevices.getUserMedia({ video: type === "video", audio: true });
     stream.getTracks().forEach((t) => peer.addTrack(t, stream));
+    
     const offer = await peer.createOffer();
     await peer.setLocalDescription(offer);
+    
     socketRef.current.emit("call-user", { to: other._id.toString(), offer, callType: type, fromInfo: { id: user.id, name: user.name } });
     setActiveCall({ from: other._id, fromName: other.name, callType: type, isIncoming: false, offer });
+    
+    // Cleanup temporary stream as CallModal handles its own
     stream.getTracks().forEach((t) => t.stop());
     peer.close();
   };
@@ -268,8 +280,8 @@ export default function ChatHub() {
                 </p>
               </div>
               <div className="flex gap-4 text-slate-500">
-                <button onClick={() => initiateCall('video')} className="p-2 hover:bg-slate-200 rounded-full transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
-                <button onClick={() => initiateCall('audio')} className="p-2 hover:bg-slate-200 rounded-full transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></button>
+                <button onClick={() => setPendingCall({ type: 'video' })} className="p-2 hover:bg-slate-200 rounded-full transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
+                <button onClick={() => setPendingCall({ type: 'audio' })} className="p-2 hover:bg-slate-200 rounded-full transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></button>
                 <button className="p-2 hover:bg-slate-200 rounded-full transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
               </div>
             </header>
@@ -313,6 +325,25 @@ export default function ChatHub() {
           </div>
         )}
       </main>
+
+      {/* 📞 Call Interfaces */}
+      {pendingCall && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
+          <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl max-w-sm w-full text-center space-y-8 animate-bounce-in">
+             <div className="w-20 h-20 bg-indigo-50 rounded-[1.5rem] flex items-center justify-center text-3xl mx-auto">
+                {pendingCall.type === 'video' ? '🎥' : '📞'}
+             </div>
+             <div>
+                <h3 className="text-xl font-black text-slate-800">Start {pendingCall.type} call?</h3>
+                <p className="text-sm text-slate-400 font-medium mt-2">Connecting with {activeConv.participants.find(p => p._id.toString() !== user.id.toString())?.name}</p>
+             </div>
+             <div className="flex gap-4">
+                <button onClick={() => setPendingCall(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 text-xs font-black uppercase tracking-widest rounded-2xl">Cancel</button>
+                <button onClick={() => initiateCall(pendingCall.type)} className="flex-1 py-4 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-100">Start Call</button>
+             </div>
+          </div>
+        </div>
+      )}
 
       {incomingCall && (
         <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">

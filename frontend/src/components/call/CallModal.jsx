@@ -5,7 +5,7 @@ export default function CallModal({ call, socket, onClose }) {
   const remoteVideo = useRef();
   const [pc, setPc] = useState(null);
   const [stream, setStream] = useState(null);
-  const [callStatus, setCallStatus] = useState("Initializing...");
+  const [callStatus, setCallStatus] = useState(call.isIncoming ? "Initializing..." : "Ringing...");
 
   useEffect(() => {
     const peer = new RTCPeerConnection({

@@ -341,8 +341,7 @@ export default function ChatHub() {
             <div className="flex gap-4">
               <button onClick={() => { socketRef.current.emit("call_rejected", { to: incomingCall.from }); setIncomingCall(null); }} className="flex-1 py-5 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-[1.8rem] hover:bg-rose-500/20 transition-all">Reject</button>
               <button onClick={() => { 
-                // The receiver accepts the call and opens the Modal.
-                // The Modal will handle the signal exchange.
+                socketRef.current.emit("call_accepted", { to: incomingCall.from, fromName: user.name });
                 setActiveCall({ ...incomingCall, isIncoming: true, accepted: true });
                 setIncomingCall(null); 
               }} className="flex-1 py-5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-[1.8rem] shadow-2xl shadow-indigo-500/40 hover:bg-indigo-500 transition-all">Authorize</button>

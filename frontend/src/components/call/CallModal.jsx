@@ -42,17 +42,18 @@ export default function CallModal({ call, socket, onClose }) {
 
         if (localVideo.current) localVideo.current.srcObject = stream;
         setLocalStream(stream);
-
         stream.getTracks().forEach((track) => peer.addTrack(track, stream));
 
-        if (call.isIncoming) {
-          // Receiver Side: Initiate WebRTC Exchange (as per requirements)
-          const offer = await peer.createOffer();
-          await peer.setLocalDescription(offer);
-          socket.emit("call_accepted", { to: call.from, signal: offer });
+        // If we are the caller and wait for acceptance notification from server
+        // (but in this flow, the server emits "call_accepted" when receiver accepts)
+        if (!call.isIncoming && call.accepted) {
+           console.log("[WebRTC] Creating Offer as Caller...");
+           const offer = await peer.createOffer();
+           await peer.setLocalDescription(offer);
+           socket.emit("call_accepted", { to: call.from, signal: offer });
         }
       } catch (err) {
-        console.error("WebRTC Error:", err);
+        console.error("[WebRTC] Media Error:", err);
         setCallStatus("Media Error");
       }
     };
@@ -61,22 +62,26 @@ export default function CallModal({ call, socket, onClose }) {
 
     // 📞 Listen for Signaling
     const handleSignal = async (data) => {
-       if (data.signal) {
-          // If we got an offer (signal), we create an answer
-          if (data.signal.type === "offer") {
+       console.log("[WebRTC] Received Signal:", data);
+       try {
+         if (data.signal) {
+           if (data.signal.type === "offer") {
+             console.log("[WebRTC] Received Offer, Creating Answer...");
              await peer.setRemoteDescription(new RTCSessionDescription(data.signal));
              const answer = await peer.createAnswer();
              await peer.setLocalDescription(answer);
-             socket.emit("call_accepted", { to: call.from, answer });
-          } else if (data.signal.type === "answer" || data.answer) {
-             const ans = data.answer || data.signal;
-             await peer.setRemoteDescription(new RTCSessionDescription(ans));
+             socket.emit("call_accepted", { to: call.from, signal: answer });
+           } else if (data.signal.type === "answer") {
+             console.log("[WebRTC] Received Answer, Setting Remote Description...");
+             await peer.setRemoteDescription(new RTCSessionDescription(data.signal));
              setCallStatus("Connected");
-          }
-       } else if (data.answer) {
-          await peer.setRemoteDescription(new RTCSessionDescription(data.answer));
-          setCallStatus("Connected");
-       }
+           }
+         } else if (data.answer) {
+             console.log("[WebRTC] Received Explicit Answer...");
+             await peer.setRemoteDescription(new RTCSessionDescription(data.answer));
+             setCallStatus("Connected");
+         }
+       } catch (err) { console.error("[WebRTC] Signal Error:", err); }
     };
 
     const handleCandidate = async ({ candidate }) => {

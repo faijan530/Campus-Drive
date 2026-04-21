@@ -14,34 +14,31 @@ export default function Login() {
   const [error, setError] = useState("");
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden">
-      {/* Animated background */}
-      <div className="absolute inset-0">
-        <div className="absolute top-0 left-0 w-96 h-96 bg-gradient-to-br from-indigo-400/30 to-purple-400/30 rounded-full blur-3xl animate-pulse"></div>
-        <div className="absolute top-1/2 right-0 w-96 h-96 bg-gradient-to-br from-purple-400/30 to-pink-400/30 rounded-full blur-3xl animate-pulse delay-1000"></div>
-        <div className="absolute bottom-0 left-1/2 w-96 h-96 bg-gradient-to-br from-pink-400/30 to-indigo-400/30 rounded-full blur-3xl animate-pulse delay-2000"></div>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden bg-[#fafafa]">
+      {/* ── Ambient Background Effects ────────────────────────── */}
+      <div className="absolute inset-0 z-0">
+        <div className="absolute top-[-10%] left-[-10%] w-[50%] h-[50%] bg-indigo-100/50 rounded-full blur-[120px] animate-pulse"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[50%] h-[50%] bg-purple-100/50 rounded-full blur-[120px] animate-pulse delay-1000"></div>
       </div>
       
-      <div className="relative z-10 w-full max-w-md">
-        <div className="bg-white/95 backdrop-blur-xl border border-white/30 rounded-3xl p-8 shadow-2xl relative overflow-hidden">
-          {/* Shimmer effect */}
-          <div className="absolute inset-0 -translate-x-full hover:translate-x-full transition-transform duration-1000 ease-out">
-            <div className="h-full w-1/3 bg-gradient-to-r from-transparent via-white/30 to-transparent transform skew-x-12"></div>
-          </div>
+      <div className="relative z-10 w-full max-w-[440px] animate-fade-in">
+        <div className="bg-white/80 backdrop-blur-3xl border border-white rounded-[3rem] p-12 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.08)] relative overflow-hidden group">
+          {/* Subtle Inner Glow */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-indigo-500/20 to-transparent"></div>
           
-          {/* Logo/Branding */}
-          <div className="text-center mb-8">
-            <div className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-br from-indigo-500 via-purple-600 to-pink-600 rounded-3xl shadow-2xl mb-6 hover:scale-110 transition-transform duration-300">
-              <span className="text-white text-3xl font-extrabold">CD</span>
+          {/* Logo Section */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-24 h-24 bg-slate-900 rounded-[2.5rem] shadow-2xl mb-8 group-hover:scale-105 transition-transform duration-500">
+               <span className="text-white text-3xl font-black tracking-tighter">CD.</span>
             </div>
             <div className="space-y-2">
-              <div className="text-2xl font-extrabold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Welcome back</div>
-              <div className="text-slate-600">Sign in to your CampusDrive AI account</div>
+              <h1 className="text-3xl font-black text-slate-800 tracking-tight">Access Portal</h1>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] italic underline decoration-indigo-500/30 underline-offset-8">Authenticated Session Sequence</p>
             </div>
           </div>
 
           <form
-            className="space-y-6"
+            className="space-y-8"
             onSubmit={async (e) => {
               e.preventDefault();
               setError("");
@@ -56,70 +53,67 @@ export default function Login() {
               }
             }}
           >
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">Email</label>
-              <div className="relative group">
-                <input
-                  className="w-full rounded-xl border border-slate-200/60 bg-white/60 px-4 py-3.5 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all duration-200 shadow-sm hover:shadow-md group-hover:bg-white group-hover:border-indigo-300"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  type="email"
-                  required
-                  autoComplete="email"
-                  placeholder="you@example.com"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors duration-200">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                  </svg>
+            <div className="space-y-6">
+              <div className="group">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Identity Vector</label>
+                <div className="relative">
+                  <input
+                    className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-4.5 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white focus:border-indigo-500 transition-all duration-300 shadow-sm"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    type="email"
+                    required
+                    autoComplete="email"
+                    placeholder="Enter assigned email"
+                  />
                 </div>
               </div>
-            </div>
-            
-            <div>
-              <label className="block text-xs font-bold text-slate-700 mb-2">Password</label>
-              <div className="relative group">
-                <input
-                  className="w-full rounded-xl border border-slate-200/60 bg-white/60 px-4 py-3.5 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-300 transition-all duration-200 shadow-sm hover:shadow-md group-hover:bg-white group-hover:border-indigo-300"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  type="password"
-                  required
-                  autoComplete="current-password"
-                  placeholder="•••••••••"
-                />
-                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 group-hover:text-indigo-500 transition-colors duration-200">
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                  </svg>
+              
+              <div className="group">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Authorization Key</label>
+                <div className="relative">
+                  <input
+                    className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-4.5 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white focus:border-indigo-500 transition-all duration-300 shadow-sm"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    type="password"
+                    required
+                    autoComplete="current-password"
+                    placeholder="••••••••••••"
+                  />
                 </div>
               </div>
             </div>
 
             {error ? (
-              <div className="text-sm font-semibold text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-pulse">
-                {error}
+              <div className="p-4 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center gap-3 animate-shake">
+                 <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+                 <p className="text-[10px] font-black uppercase tracking-widest">Protocol error: {error}</p>
               </div>
             ) : null}
 
             <button
               disabled={loading}
-              className="w-full rounded-xl bg-gradient-to-r from-indigo-600 via-purple-600 to-pink-600 text-white text-sm font-bold py-3.5 shadow-lg hover:shadow-xl transition-all duration-300 transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed relative overflow-hidden group"
+              className="w-full rounded-2xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.3em] py-5 shadow-2xl hover:bg-black transition-all duration-300 transform active:scale-[0.98] disabled:opacity-50 relative overflow-hidden flex items-center justify-center gap-3"
             >
-              <span className="relative z-10">
-                {loading ? "Signing in…" : "Sign in"}
-              </span>
-              <div className="absolute inset-0 bg-gradient-to-r from-white/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M11 16l-4-4m0 0l4-4m-4 4h14m-5 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h7a3 3 0 013 3v1"/></svg>
+                  Execute Login
+                </>
+              )}
             </button>
           </form>
 
-          <div className="mt-6 text-center text-sm text-slate-700">
-            New here?{" "}
+          <div className="mt-10 text-center">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Unauthorized Access? </p>
             <Link 
-              className="font-bold text-indigo-600 hover:text-indigo-700 underline underline-offset-2 transition-colors duration-200"
+              className="inline-block px-10 py-3 rounded-xl border border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-50 hover:text-slate-900 transition-all"
               to="/register"
             >
-              Create an account
+              Initialize Sub-Account
             </Link>
           </div>
         </div>
@@ -127,4 +121,5 @@ export default function Login() {
     </div>
   );
 }
+
 

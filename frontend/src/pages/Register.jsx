@@ -13,141 +13,135 @@ export default function Register() {
   const [error, setError] = useState("");
 
   return (
-    <div className="min-h-screen flex items-center justify-center px-4 bg-gradient-to-br from-slate-50 via-white to-slate-50">
-      <div className="w-full max-w-md bg-white/80 backdrop-blur-sm border border-slate-200/60 rounded-2xl p-8 shadow-xl">
-        {/* Logo/Branding */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-slate-900 to-slate-700 rounded-2xl shadow-lg mb-4">
-            <span className="text-white text-2xl font-extrabold">CD</span>
-          </div>
-          <div className="space-y-1">
-            <div className="text-xl font-extrabold bg-gradient-to-r from-slate-900 to-slate-700 bg-clip-text text-transparent">Create account</div>
-            <div className="text-sm text-slate-600">Start building a recruiter-ready profile</div>
-          </div>
-        </div>
+    <div className="min-h-screen flex items-center justify-center px-4 relative overflow-hidden bg-[#fafafa]">
+       {/* ── Ambient Background Effects ────────────────────────── */}
+       <div className="absolute inset-0 z-0">
+         <div className="absolute top-[-5%] right-[-5%] w-[40%] h-[40%] bg-indigo-100/40 rounded-full blur-[100px] animate-pulse"></div>
+         <div className="absolute bottom-[-5%] left-[-5%] w-[40%] h-[40%] bg-rose-100/40 rounded-full blur-[100px] animate-pulse delay-700"></div>
+       </div>
 
-        <form
-          className="space-y-5"
-          onSubmit={async (e) => {
-            e.preventDefault();
-            setError("");
-            setLoading(true);
-            try {
-              await register({ name, email, password });
-              navigate("/app/profile", { replace: true });
-            } catch (err) {
-              setError(err.message || "Registration failed");
-            } finally {
-              setLoading(false);
-            }
-          }}
-        >
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">Full name</label>
-            <div className="relative">
-              <input
-                className="w-full rounded-xl border border-slate-200/60 bg-white/60 px-4 py-3 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md"
-                value={name}
-                onChange={(e) => setName(e.target.value)}
-                type="text"
-                required
-                autoComplete="name"
-                placeholder="John Doe"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
-                </svg>
-              </div>
+      <div className="relative z-10 w-full max-w-[480px] animate-fade-in">
+        <div className="bg-white/80 backdrop-blur-3xl border border-white rounded-[3rem] p-12 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] group">
+          {/* Logo Section */}
+          <div className="text-center mb-10">
+            <div className="inline-flex items-center justify-center w-20 h-20 bg-slate-900 rounded-3xl shadow-2xl mb-6 group-hover:rotate-12 transition-transform duration-500">
+              <span className="text-white text-2xl font-black tracking-tighter">CD.</span>
             </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">Email</label>
-            <div className="relative">
-              <input
-                className="w-full rounded-xl border border-slate-200/60 bg-white/60 px-4 py-3 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                type="email"
-                required
-                autoComplete="email"
-                placeholder="you@example.com"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                </svg>
-              </div>
+            <div className="space-y-2">
+              <h1 className="text-3xl font-black text-slate-800 tracking-tight">Onboarding Phase</h1>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] italic">Generate Recruiter-Ready Identity</p>
             </div>
-          </div>
-          
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">Password</label>
-            <div className="relative">
-              <input
-                className="w-full rounded-xl border border-slate-200/60 bg-white/60 px-4 py-3 text-sm font-semibold text-slate-800 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-slate-900/20 focus:border-slate-300 transition-all duration-200 shadow-sm hover:shadow-md"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                type="password"
-                required
-                minLength={8}
-                autoComplete="new-password"
-                placeholder="••••••••"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-            </div>
-            <div className="mt-1 text-xs text-slate-500 ml-1">Minimum 8 characters</div>
-          </div>
-          
-          <div>
-            <label className="block text-xs font-bold text-slate-700 mb-2">Role</label>
-            <div className="relative">
-              <input
-                id="register-role"
-                type="text"
-                value="Student"
-                disabled
-                className="w-full rounded-xl border border-slate-200/60 bg-slate-100 px-4 py-3 text-sm font-semibold text-slate-500 cursor-not-allowed shadow-sm select-none"
-              />
-              <div className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none">
-                <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z" />
-                </svg>
-              </div>
-            </div>
-            <div className="mt-1 text-xs text-slate-500 ml-1">Roles are assigned by admins</div>
           </div>
 
-          {error ? (
-            <div className="text-sm font-semibold text-red-700 bg-red-50 border border-red-200 rounded-xl px-4 py-3 animate-pulse">
-              {error}
-            </div>
-          ) : null}
-
-          <button
-            disabled={loading}
-            className="w-full rounded-xl bg-gradient-to-r from-slate-900 to-slate-800 text-white text-sm font-bold py-3.5 shadow-lg hover:shadow-xl transition-all duration-200 transform active:scale-95 disabled:opacity-60 disabled:cursor-not-allowed"
+          <form
+            className="space-y-6"
+            onSubmit={async (e) => {
+              e.preventDefault();
+              setError("");
+              setLoading(true);
+              try {
+                await register({ name, email, password });
+                navigate("/app/profile", { replace: true });
+              } catch (err) {
+                setError(err.message || "Registration failed");
+              } finally {
+                setLoading(false);
+              }
+            }}
           >
-            {loading ? "Creating…" : "Create account"}
-          </button>
-        </form>
+            <div className="space-y-5">
+              <div className="group">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Legal Designation</label>
+                <input
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white focus:border-slate-900 transition-all duration-300"
+                  value={name}
+                  onChange={(e) => setName(e.target.value)}
+                  type="text"
+                  required
+                  autoComplete="name"
+                  placeholder="Full Legal Name"
+                />
+              </div>
+              
+              <div className="group">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Email Endpoint</label>
+                <input
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white focus:border-slate-900 transition-all duration-300"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  type="email"
+                  required
+                  autoComplete="email"
+                  placeholder="Contact Vector (Email)"
+                />
+              </div>
+              
+              <div className="group">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Encryption Protocol</label>
+                <input
+                  className="w-full rounded-2xl border border-slate-100 bg-slate-50/50 px-6 py-4 text-sm font-bold text-slate-800 placeholder:text-slate-300 focus:outline-none focus:ring-4 focus:ring-indigo-500/5 focus:bg-white focus:border-slate-900 transition-all duration-300"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  type="password"
+                  required
+                  minLength={8}
+                  autoComplete="new-password"
+                  placeholder="Create Secure Passphrase"
+                />
+                <div className="mt-2 text-[9px] font-black text-slate-400 uppercase italic ml-1 tracking-widest">Entropy: Min 8 Octets required</div>
+              </div>
+              
+              <div className="group">
+                <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Default Protocol Role</label>
+                <div className="relative">
+                  <input
+                    type="text"
+                    value="Student / Candidate"
+                    disabled
+                    className="w-full rounded-2xl border border-slate-100 bg-slate-100 px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest shadow-inner cursor-not-allowed"
+                  />
+                  <div className="absolute right-4 top-1/2 -translate-y-1/2">
+                    <svg className="w-4 h-4 text-slate-300" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"/></svg>
+                  </div>
+                </div>
+              </div>
+            </div>
 
-        <div className="mt-6 text-center text-sm text-slate-700">
-          Already have an account?{" "}
-          <Link 
-            className="font-bold text-slate-900 hover:text-slate-700 underline underline-offset-2 transition-colors duration-200" 
-            to="/login"
-          >
-            Sign in
-          </Link>
+            {error ? (
+              <div className="p-4 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center gap-3 animate-shake">
+                <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
+                <p className="text-[10px] font-black uppercase tracking-widest italic">{error}</p>
+              </div>
+            ) : null}
+
+            <button
+              disabled={loading}
+              className="w-full rounded-2xl bg-indigo-600 text-white text-[11px] font-black uppercase tracking-[0.3em] py-5 shadow-2xl shadow-indigo-100 hover:bg-slate-900 transition-all duration-300 transform active:scale-95 disabled:opacity-50 flex items-center justify-center gap-3"
+            >
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin"></div>
+              ) : (
+                <>
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M18 9v3m0 0v3m0-3h3m-3 0h-3m-2-5a4 4 0 11-8 0 4 4 0 018 0zM3 20a6 6 0 0112 0v1H3v-1z"/></svg>
+                  Initialize Identity
+                </>
+              )}
+            </button>
+          </form>
+
+          <div className="mt-10 text-center">
+            <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-3">Existing Protocol detected?</p>
+            <Link 
+              className="inline-block px-10 py-3 rounded-xl border border-slate-100 text-[10px] font-black text-slate-500 uppercase tracking-widest hover:bg-slate-50 hover:text-slate-900 transition-all" 
+              to="/login"
+            >
+              Authorization Bridge
+            </Link>
+          </div>
         </div>
       </div>
     </div>
   );
 }
+
 

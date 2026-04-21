@@ -9,33 +9,16 @@ const STATUSES = ["In Progress", "Completed", "On Hold"];
 const columns = [
   {
     key: "title",
-    label: "Project",
+    label: "Project Insight",
     render: (val, row) => (
-      <div>
-        <p className="font-semibold text-slate-800">{val}</p>
-        {row.description && (
-          <p className="text-xs text-slate-500 mt-0.5 line-clamp-2">{row.description}</p>
-        )}
-        <div className="flex gap-3 mt-1">
+      <div className="flex flex-col gap-1">
+        <p className="text-[15px] font-black text-slate-800 tracking-tight">{val}</p>
+        <div className="flex gap-4">
           {row.githubLink && (
-            <a
-              href={row.githubLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-slate-400 hover:text-slate-700"
-            >
-              GitHub ↗
-            </a>
+            <a href={row.githubLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-indigo-500 hover:text-indigo-700">Source Code</a>
           )}
           {row.liveLink && (
-            <a
-              href={row.liveLink}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-xs text-slate-400 hover:text-slate-700"
-            >
-              Live ↗
-            </a>
+            <a href={row.liveLink} target="_blank" rel="noopener noreferrer" className="text-[10px] font-black uppercase tracking-widest text-emerald-500 hover:text-emerald-700">Live Demo</a>
           )}
         </div>
       </div>
@@ -43,32 +26,32 @@ const columns = [
   },
   {
     key: "techStack",
-    label: "Tech Stack",
+    label: "Architecture",
     render: (val) =>
       val?.length ? (
-        <div className="flex flex-wrap gap-1">
-          {val.map((t) => <Badge key={t} label={t} className="mb-0.5" />)}
+        <div className="flex flex-wrap gap-1.5">
+          {val.map((t) => (
+            <span key={t} className="text-[9px] font-black uppercase tracking-tighter bg-slate-50 text-slate-400 px-2.5 py-1 rounded-lg border border-slate-100">{t}</span>
+          ))}
         </div>
       ) : (
-        <span className="text-slate-400">—</span>
+        <span className="text-[10px] font-black text-slate-300 uppercase">Not Specified</span>
       ),
   },
   {
     key: "status",
-    label: "Status",
+    label: "Lifecycle",
     render: (val, row) => (
        <div className="flex flex-col gap-1 items-start">
          <Badge label={val} variant="status" />
-         {row.verificationStatus && row.verificationStatus !== "PENDING" && (
-            <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold uppercase ${
-              row.verificationStatus === "APPROVED" ? "bg-emerald-100 text-emerald-800" 
-              : "bg-rose-100 text-rose-800"
+         {row.verificationStatus && (
+            <span className={`text-[9px] px-2 py-0.5 rounded-full font-black uppercase tracking-widest mt-1 ${
+              row.verificationStatus === "APPROVED" ? "bg-emerald-50 text-emerald-600" 
+              : row.verificationStatus === "PENDING" ? "bg-amber-50 text-amber-600"
+              : "bg-rose-50 text-rose-600"
             }`}>
-               {row.verificationStatus}
+               {row.verificationStatus === "PENDING" ? "Awaiting Audit" : row.verificationStatus}
             </span>
-         )}
-         {row.verificationStatus === "PENDING" && (
-            <span className="bg-amber-100 text-amber-800 text-[10px] px-1.5 py-0.5 rounded font-bold uppercase">Pending Verification</span>
          )}
        </div>
     )
@@ -108,7 +91,7 @@ export default function ProjectsPage() {
   async function handleSubmit(e) {
     e.preventDefault();
     setFormError(null);
-    if (!form.title.trim()) return setFormError("Project title is required");
+    if (!form.title.trim()) return setFormError("Title is essential.");
 
     setSubmitting(true);
     try {
@@ -124,7 +107,7 @@ export default function ProjectsPage() {
   }
 
   async function handleDelete(id) {
-    if (!window.confirm("Remove this project?")) return;
+    if (!window.confirm("Archive this entry?")) return;
     try {
       await deleteProject(id, token);
       setProjects((prev) => prev.filter((p) => p._id !== id));
@@ -134,156 +117,120 @@ export default function ProjectsPage() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between flex-wrap gap-3">
+    <div className="space-y-10 animate-fade-in pb-20">
+      <div className="flex items-center justify-between flex-wrap gap-6 px-4">
         <div>
-          <h1 className="text-xl font-bold text-slate-900">Projects</h1>
-          <p className="text-sm text-slate-500 mt-1">Showcase your portfolio projects.</p>
+          <h1 className="text-4xl font-black text-slate-800 tracking-tight">Portfolio Spotlight</h1>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-1">Operational Evidence & Code Samples</p>
         </div>
         <button
-          id="toggle-project-form"
           onClick={() => setShowForm((v) => !v)}
-          className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 rounded-lg hover:bg-slate-700 transition-colors"
+          className={`px-8 py-4 text-xs font-black uppercase tracking-widest rounded-[1.5rem] transition-all shadow-xl active:scale-95 flex items-center gap-2 ${
+            showForm ? "bg-rose-50 text-rose-500 shadow-rose-100" : "bg-indigo-600 text-white shadow-indigo-100 hover:shadow-indigo-200"
+          }`}
         >
-          {showForm ? "Cancel" : "+ Add Project"}
+          {showForm ? (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M6 18L18 6M6 6l12 12"/></svg>
+          ) : (
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M12 4v16m8-8H4"/></svg>
+          )}
+          {showForm ? "Retract" : "New Project"}
         </button>
       </div>
 
-      {/* Add Project Form */}
-      {showForm && (
-        <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-          <div className="px-5 py-4 border-b border-slate-100">
-            <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">New Project</h2>
-          </div>
-          <form onSubmit={handleSubmit} className="px-5 py-4 space-y-4">
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                  Title <span className="text-slate-400">*</span>
-                </label>
-                <input
-                  id="project-title"
-                  name="title"
-                  value={form.title}
-                  onChange={handleChange}
-                  placeholder="e.g. Student Portal"
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 text-slate-800 placeholder-slate-400"
-                />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+        {/* Form Overlay-ish */}
+        {showForm && (
+           <div className="lg:col-span-12 animate-slide-up">
+              <div className="bg-white/70 backdrop-blur-3xl border border-white rounded-[3rem] p-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] relative overflow-hidden">
+                <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-50/50 rounded-bl-full -z-0"></div>
+                <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8 relative z-10">Project Configuration</h2>
+                
+                <form onSubmit={handleSubmit} className="space-y-8 relative z-10">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Project Name</label>
+                        <input name="title" value={form.title} onChange={handleChange} placeholder="e.g. Real-time Analytics Engine" className="w-full px-6 py-4 border border-slate-100 rounded-2xl bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold transition-all" />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Status</label>
+                        <select name="status" value={form.status} onChange={handleChange} className="w-full px-6 py-4 border border-slate-100 rounded-2xl bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold transition-all appearance-none">
+                          {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
+                        </select>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Deep Overview</label>
+                      <textarea name="description" value={form.description} onChange={handleChange} rows={5} placeholder="What operational problem did this project solve? Be technical." className="w-full px-6 py-4 border border-slate-100 rounded-2xl bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold transition-all resize-none" />
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Architecture Stack</label>
+                      <input name="techStack" value={form.techStack} onChange={handleChange} placeholder="React, Node, Redis..." className="w-full px-6 py-4 border border-slate-100 rounded-2xl bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">VCS (GitHub/GitLab)</label>
+                      <input name="githubLink" value={form.githubLink} onChange={handleChange} placeholder="https://github.com/..." className="w-full px-6 py-4 border border-slate-100 rounded-2xl bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold transition-all" />
+                    </div>
+                    <div>
+                      <label className="block text-[10px] font-black text-slate-400 uppercase tracking-widest mb-2 px-1">Live Endpoint</label>
+                      <input name="liveLink" value={form.liveLink} onChange={handleChange} placeholder="https://..." className="w-full px-6 py-4 border border-slate-100 rounded-2xl bg-white focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:border-indigo-500 font-bold transition-all" />
+                    </div>
+                  </div>
+
+                  {formError && (
+                    <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex gap-3 items-center">
+                       <div className="w-2 h-2 bg-rose-500 rounded-full animate-pulse"></div>
+                       <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">{formError}</p>
+                    </div>
+                  )}
+
+                  <div className="flex justify-end gap-4">
+                    <button type="submit" disabled={submitting} className="px-12 py-5 bg-black text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-2xl hover:bg-slate-800 transition-all active:scale-95 disabled:opacity-50">
+                      {submitting ? "Finalizing Transaction..." : "Append to Grid"}
+                    </button>
+                  </div>
+                </form>
               </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Status</label>
-                <select
-                  id="project-status"
-                  name="status"
-                  value={form.status}
-                  onChange={handleChange}
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 text-slate-800"
-                >
-                  {STATUSES.map((s) => <option key={s} value={s}>{s}</option>)}
-                </select>
-              </div>
-            </div>
+           </div>
+        )}
 
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">Description</label>
-              <textarea
-                id="project-description"
-                name="description"
-                value={form.description}
-                onChange={handleChange}
-                rows={3}
-                placeholder="Brief overview of what you built and the problem it solves…"
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 text-slate-800 placeholder-slate-400 resize-none"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                Tech Stack <span className="text-slate-400">(comma-separated)</span>
-              </label>
-              <input
-                id="project-techstack"
-                name="techStack"
-                value={form.techStack}
-                onChange={handleChange}
-                placeholder="React, Node.js, MongoDB"
-                className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 text-slate-800 placeholder-slate-400"
-              />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">GitHub Link</label>
-                <input
-                  id="project-github"
-                  name="githubLink"
-                  value={form.githubLink}
-                  onChange={handleChange}
-                  placeholder="https://github.com/..."
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 text-slate-800 placeholder-slate-400"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">Live Link</label>
-                <input
-                  id="project-live"
-                  name="liveLink"
-                  value={form.liveLink}
-                  onChange={handleChange}
-                  placeholder="https://..."
-                  className="w-full px-3 py-2 text-sm border border-slate-200 rounded-lg bg-slate-50 focus:outline-none focus:ring-2 focus:ring-slate-300 text-slate-800 placeholder-slate-400"
-                />
-              </div>
-            </div>
-
-            {formError && (
-              <p className="text-xs font-medium text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-                {formError}
-              </p>
-            )}
-
-            <div className="flex justify-end">
-              <button
-                id="save-project-btn"
-                type="submit"
-                disabled={submitting}
-                className="px-4 py-2 text-sm font-semibold text-white bg-slate-800 rounded-lg hover:bg-slate-700 disabled:opacity-50 transition-colors"
-              >
-                {submitting ? "Saving…" : "Save Project"}
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Projects Table */}
-      <div className="bg-white border border-slate-200 rounded-xl overflow-hidden">
-        <div className="flex items-center justify-between px-5 py-4 border-b border-slate-100">
-          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Your Projects</h2>
-          <span className="text-xs text-slate-400">{projects.length} project{projects.length !== 1 ? "s" : ""}</span>
-        </div>
-        <div className="px-5 py-4">
-          {loading ? (
-            <p className="text-sm text-slate-400 text-center py-6">Loading projects…</p>
-          ) : error ? (
-            <p className="text-sm text-amber-700">{error}</p>
-          ) : (
-            <Table
-              columns={columns}
-              rows={projects}
-              emptyText="No projects added yet. Click '+ Add Project' to get started."
-              actions={(row) => (
-                <button
-                  onClick={() => handleDelete(row._id)}
-                  className="text-xs font-medium text-slate-400 hover:text-slate-700 transition-colors"
-                >
-                  Remove
-                </button>
-              )}
-            />
-          )}
+        <div className="lg:col-span-12 space-y-8">
+           <div className="bg-white/80 backdrop-blur-3xl border border-white rounded-[3rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.03)] overflow-hidden">
+             <div className="px-10 py-8 border-b border-slate-50 flex items-center justify-between">
+                <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em]">Deployment Table</h2>
+                <span className="text-[10px] font-black text-indigo-500 bg-indigo-50 px-3 py-1 rounded-full uppercase tracking-tighter">{projects.length} Entries Finalized</span>
+             </div>
+             
+             <div className="p-10">
+                {loading ? (
+                   <div className="flex flex-col items-center justify-center py-20 space-y-4">
+                      <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
+                      <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">Hydrating state...</p>
+                   </div>
+                ) : (
+                   <Table
+                    columns={columns}
+                    rows={projects}
+                    emptyText="No deployments registered. Expand your grid by adding a new project."
+                    actions={(row) => (
+                      <button
+                        onClick={() => handleDelete(row._id)}
+                        className="p-3 bg-slate-50 hover:bg-rose-50 text-slate-300 hover:text-rose-500 rounded-xl transition-all group"
+                      >
+                        <svg className="w-4 h-4 group-hover:scale-110 transition-transform" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                      </button>
+                    )}
+                  />
+                )}
+             </div>
+           </div>
         </div>
       </div>
     </div>
   );
 }
+

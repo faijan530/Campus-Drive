@@ -108,48 +108,49 @@ async function main() {
 
     // 📞 WebRTC Signaling ──────────────────────────────────────
     
-    // 📞 Call user
-    socket.on("call-user", ({ to, offer, callType, fromInfo }) => {
+    // 📞 WebRTC Signaling ──────────────────────────────────────
+    
+    // 📞 Call user (Initiate request)
+    socket.on("call_user", ({ to, callType, fromInfo }) => {
       const receiverSocket = onlineUsers.get(to);
       if (receiverSocket) {
-        io.to(receiverSocket).emit("incoming-call", {
+        io.to(receiverSocket).emit("incoming_call", {
           from: fromInfo.id,
           fromName: fromInfo.name,
-          offer,
           callType // "audio" or "video"
         });
       }
     });
 
     // ✅ Accept call
-    socket.on("answer-call", ({ to, answer }) => {
+    socket.on("call_accepted", ({ to, signal, answer }) => {
       const receiverSocket = onlineUsers.get(to);
       if (receiverSocket) {
-        io.to(receiverSocket).emit("call-accepted", { answer });
+        io.to(receiverSocket).emit("call_accepted", { signal, answer });
       }
     });
 
     // ❌ Reject call
-    socket.on("reject-call", ({ to }) => {
+    socket.on("call_rejected", ({ to }) => {
       const receiverSocket = onlineUsers.get(to);
       if (receiverSocket) {
-        io.to(receiverSocket).emit("call-rejected");
+        io.to(receiverSocket).emit("call_rejected");
       }
     });
 
     // 🔁 ICE candidates
-    socket.on("ice-candidate", ({ to, candidate }) => {
+    socket.on("ice_candidate", ({ to, candidate }) => {
       const receiverSocket = onlineUsers.get(to);
       if (receiverSocket) {
-        io.to(receiverSocket).emit("ice-candidate", { candidate });
+        io.to(receiverSocket).emit("ice_candidate", { candidate });
       }
     });
 
     // 📴 End call
-    socket.on("end-call", ({ to }) => {
+    socket.on("end_call", ({ to }) => {
       const receiverSocket = onlineUsers.get(to);
       if (receiverSocket) {
-        io.to(receiverSocket).emit("call-ended");
+        io.to(receiverSocket).emit("end_call");
       }
     });
 

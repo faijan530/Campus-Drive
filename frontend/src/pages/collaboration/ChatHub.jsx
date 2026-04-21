@@ -29,73 +29,75 @@ export default function ChatHub() {
   const [sending, setSending] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // Real-time state
   const socketRef = useRef(null);
   const [onlineUsers, setOnlineUsers] = useState([]);
   const [typingUsers, setTypingUsers] = useState(new Set());
   const [lastSeenMap, setLastSeenMap] = useState({});
+  
+  // Call States
   const [activeCall, setActiveCall] = useState(null);
   const [incomingCall, setIncomingCall] = useState(null);
+  const [pendingCall, setPendingCall] = useState(null);
   const bottomRef = useRef(null);
 
   useEffect(() => {
     fetchConversations();
     const socket = io(BASE_URL);
     socketRef.current = socket;
+
     socket.on("connect", () => socket.emit("user-online", user.id));
     socket.on("online-users", setOnlineUsers);
-    socket.on("last-seen-update", setLastSeenMap);
+    
     socket.on("receive-message", (msg) => {
       setMessages((prev) => (!prev.find((m) => m._id === msg._id) ? [...prev, msg] : prev));
       scrollToBottom();
     });
-    socket.on("message-status-update", (msg) => {
-      setMessages((prev) => {
-        const idx = prev.findIndex((m) => m._id === msg._id || (m.tempId && m.tempId === msg.tempId));
-        if (idx !== -1) {
-          const updated = [...prev];
-          updated[idx] = msg;
-          return updated;
-        }
-        return [...prev, msg];
-      });
-      scrollToBottom();
-    });
-    socket.on("message-read", (readMsg) =>
-      setMessages((prev) => prev.map((m) => (m._id === readMsg._id ? { ...m, status: "READ" } : m)))
-    );
+
     socket.on("user-offline", ({ userId, lastSeen }) => {
       setLastSeenMap((prev) => ({ ...prev, [userId]: lastSeen }));
       setOnlineUsers((prev) => prev.filter((id) => id !== userId));
     });
+
     socket.on("typing", (id) => setTypingUsers((prev) => new Set(prev).add(id)));
-    socket.on("stop-typing", (id) =>
-      setTypingUsers((prev) => {
-        const n = new Set(prev);
-        n.delete(id);
-        return n;
-      })
-    );
-    socket.on("incoming-call", setIncomingCall);
-    socket.on("call-rejected", () => { setIncomingCall(null); setActiveCall(null); });
-    socket.on("call-ended", () => { setIncomingCall(null); setActiveCall(null); });
+    socket.on("stop-typing", (id) => setTypingUsers((prev) => { const n = new Set(prev); n.delete(id); return n; }));
+
+    // 📞 Call Events
+    socket.on("incoming_call", (data) => {
+       console.log("Incoming Call Request:", data);
+       setIncomingCall(data);
+    });
+
+    socket.on("call_accepted", (data) => {
+       console.log("Call Accepted by Receiver:", data);
+       // Caller side: Receiver has accepted, we transition to CallModal
+       // The CallModal will handle the WebRTC negotiation
+       setActiveCall({
+          from: data.from || activeCall?.from,
+          fromName: data.fromName || activeCall?.fromName,
+          callType: activeCall?.callType,
+          isIncoming: false,
+          accepted: true
+       });
+    });
+
+    socket.on("call_rejected", () => {
+       setIncomingCall(null);
+       setActiveCall(null);
+       setPendingCall(null);
+    });
+
+    socket.on("end_call", () => {
+       setIncomingCall(null);
+       setActiveCall(null);
+    });
+
     return () => socket.disconnect();
-  }, [token, user.id]);
+  }, [token, user.id, activeCall]);
 
   useEffect(() => {
     if (activeConv) fetchMessages(activeConv._id);
   }, [activeConv, token]);
-
-  useEffect(() => {
-    if (activeConv && socketRef.current && messages.length > 0) {
-      messages.forEach((msg) => {
-        if (msg.senderId._id !== user.id && msg.senderId.role !== "AI" && msg.status !== "READ") {
-          if (typeof msg._id === "string" && msg._id.length > 15) {
-            socketRef.current.emit("mark-read", { messageId: msg._id.toString(), readerId: user.id.toString() });
-          }
-        }
-      });
-    }
-  }, [messages, activeConv, user.id]);
 
   const scrollToBottom = () => setTimeout(() => bottomRef.current?.scrollIntoView({ behavior: "smooth" }), 100);
 
@@ -145,51 +147,39 @@ export default function ChatHub() {
     setReply("");
     setSending(true);
     const tempId = Date.now().toString();
-    setMessages((prev) => [
-      ...prev,
-      { _id: tempId, tempId, senderId: { _id: user.id, name: user.name }, content, createdAt: new Date(), status: "SENDING" },
-    ]);
+    setMessages((prev) => [...prev, { _id: tempId, tempId, senderId: { _id: user.id, name: user.name }, content, createdAt: new Date(), status: "SENDING" }]);
     scrollToBottom();
     try {
       const other = activeConv.participants.find((p) => p._id.toString() !== user.id.toString());
-      socketRef.current?.emit("send-message", {
-        conversationId: activeConv._id,
-        senderId: user.id.toString(),
-        receiverId: other?._id?.toString(),
-        content,
-        tempId,
-      });
+      socketRef.current?.emit("send-message", { conversationId: activeConv._id, senderId: user.id.toString(), receiverId: other?._id?.toString(), content, tempId });
       fetchConversations();
     } catch (err) { console.error(err); } finally { setSending(false); }
   };
 
-  // WebRTC confirmation state
-  const [pendingCall, setPendingCall] = useState(null);
-
-  const initiateCall = async (type) => {
+  // 📞 Initiate Call Request (Step 1)
+  const initiateCallRequest = (type) => {
     if (!activeConv || !socketRef.current) return;
     const other = activeConv.participants.find((p) => p._id.toString() !== user.id.toString());
     
-    // Close confirmation
+    // Emit call_user (Signal)
+    socketRef.current.emit("call_user", {
+       to: other._id.toString(),
+       callType: type,
+       fromInfo: { id: user.id, name: user.name }
+    });
+
+    // Show "Calling..." state
+    setActiveCall({
+       from: other._id,
+       fromName: other.name,
+       callType: type,
+       isIncoming: false,
+       status: "Calling..."
+    });
     setPendingCall(null);
-    
-    // Initializing Peer Connection
-    const peer = new RTCPeerConnection({ iceServers: [{ urls: "stun:stun.l.google.com:19302" }] });
-    const stream = await navigator.mediaDevices.getUserMedia({ video: type === "video", audio: true });
-    stream.getTracks().forEach((t) => peer.addTrack(t, stream));
-    
-    const offer = await peer.createOffer();
-    await peer.setLocalDescription(offer);
-    
-    socketRef.current.emit("call-user", { to: other._id.toString(), offer, callType: type, fromInfo: { id: user.id, name: user.name } });
-    setActiveCall({ from: other._id, fromName: other.name, callType: type, isIncoming: false, offer });
-    
-    // Cleanup temporary stream as CallModal handles its own
-    stream.getTracks().forEach((t) => t.stop());
-    peer.close();
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center font-black animate-pulse">LOADING...</div>;
+  if (loading) return <div className="h-screen flex items-center justify-center font-black animate-pulse bg-[#0F172A] text-white">INITIALIZING PROTOCOL...</div>;
 
   const filtered = conversations.filter((c) => {
     const p = c.participants.find((pa) => pa._id.toString() !== user.id.toString()) || c.participants[0];
@@ -197,32 +187,31 @@ export default function ChatHub() {
   });
 
   return (
-    <div className="h-screen w-full flex flex-col md:flex-row bg-white overflow-hidden text-sm">
+    <div className="h-screen w-full flex flex-col md:flex-row bg-[#0F172A] overflow-hidden text-sm">
       
-      {/* ── WhatsApp Vertical Rail (Desktop Only) ── */}
-      <nav className="hidden md:flex w-[64px] flex-col items-center py-4 bg-[#F0F2F5] border-r border-slate-200 gap-6 shrink-0">
-         <button className="p-2 text-slate-600 hover:bg-slate-200 rounded-lg transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
-         <button className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M11 11V9a2 2 0 00-2-2m2 4v4a2 2 0 104 0v-1m-4-3H9m2 0h4m6 1a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>
-         <button className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"/></svg></button>
-         <div className="mt-auto flex flex-col gap-4 items-center">
-            <button className="p-2 text-slate-400 hover:bg-slate-200 rounded-lg transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
-            <img src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`} className="w-8 h-8 rounded-full cursor-pointer hover:ring-2 ring-indigo-500 transition-all" alt="" />
+      {/* ── Vertical Rail (Desktop) ── */}
+      <nav className="hidden md:flex w-[72px] flex-col items-center py-6 bg-slate-900 border-r border-white/5 gap-8 shrink-0">
+         <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/20">CD.</div>
+         <button className="p-3 text-indigo-400 bg-indigo-500/10 rounded-2xl transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
+         <button className="p-3 text-white/20 hover:text-white transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></button>
+         <button className="p-3 text-white/20 hover:text-white transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
+         <div className="mt-auto flex flex-col items-center gap-6 pb-2">
+            <img src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`} className="w-10 h-10 rounded-2xl border border-white/10" alt="" />
          </div>
       </nav>
 
-      {/* ── Chat List (Conversation Sidebar) ── */}
-      <aside className={`h-full md:w-[350px] border-r border-slate-100 flex-col bg-white shrink-0 ${activeConv ? "hidden md:flex" : "flex w-full"}`}>
-        <div className="p-4 border-b border-slate-50 flex flex-col gap-3">
+      {/* ── Chat Sidebar (Conversations) ── */}
+      <aside className={`h-full md:w-[400px] border-r border-white/5 flex-col bg-slate-900 shrink-0 ${activeConv ? "hidden md:flex" : "flex w-full"}`}>
+        <div className="p-6 border-b border-white/5 flex flex-col gap-6">
           <div className="flex justify-between items-center">
-            <h1 className="text-xl font-black text-slate-800 tracking-tight">Chats</h1>
-            <div className="flex gap-4 text-slate-500">
-               <button><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
-               <button><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path d="M12 5v.01M12 12v.01M12 19v.01M12 6a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2zm0 7a1 1 0 110-2 1 1 0 010 2z"/></svg></button>
-            </div>
+            <h1 className="text-2xl font-black text-white tracking-tight">Messages.</h1>
+            <button className="w-10 h-10 bg-white/5 hover:bg-white/10 text-white rounded-xl flex items-center justify-center transition-all">
+               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"/></svg>
+            </button>
           </div>
-          <div className="relative">
-            <input type="text" placeholder="Search or start new chat" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-slate-100/50 rounded-lg text-xs font-medium focus:outline-none focus:bg-white border-b-2 border-transparent focus:border-indigo-500 transition-all" />
-            <svg className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+          <div className="relative group">
+            <input type="text" placeholder="Search conversations..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white/5 rounded-2xl text-xs font-bold text-white placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white/10 transition-all" />
+            <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
         <div className="flex-1 overflow-y-auto custom-scrollbar">
@@ -231,129 +220,137 @@ export default function ChatHub() {
             const isActive = activeConv?._id === c._id;
             const isOnline = p && onlineUsers.some((id) => id.toString() === p._id.toString());
             return (
-              <div key={c._id} onClick={() => handleOpenChat(c)} className={`flex items-center gap-4 p-3 px-4 cursor-pointer border-b border-slate-50 transition-all ${isActive ? "bg-[#F0F2F5]" : "hover:bg-[#F5F6F6]"}`}>
+              <div key={c._id} onClick={() => handleOpenChat(c)} className={`flex items-center gap-4 p-5 cursor-pointer border-b border-white/[0.02] transition-all ${isActive ? "bg-white/[0.05]" : "hover:bg-white/[0.02]"}`}>
                 <div className="relative shrink-0">
-                  <div className="w-12 h-12 md:w-14 md:h-14 rounded-full overflow-hidden border border-slate-100 shadow-sm">
-                    <img src={p?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(p?.name || "U")}&background=F5F3FF&color=7C3AED&bold=true`} className="w-full h-full object-cover" alt="" />
+                  <div className="w-14 h-14 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                    <img src={p?.avatar || `https://ui-avatars.com/api/?name=${p?.name}&background=random`} className="w-full h-full object-cover" alt="" />
                   </div>
-                  {isOnline && <span className="absolute bottom-0 right-1 w-3 h-3 bg-emerald-500 border-2 border-white rounded-full"></span>}
+                  {isOnline && <span className="absolute bottom-[-2px] right-[-2px] w-4 h-4 bg-emerald-500 border-4 border-slate-900 rounded-full"></span>}
                 </div>
-                <div className="flex-1 min-w-0 flex flex-col py-1">
-                  <div className="flex justify-between items-baseline">
-                    <p className="font-bold text-slate-800 text-[15px] truncate leading-tight tracking-tight">{p?.name}</p>
-                    <p className={`text-[10px] font-bold ${c.unreadCount?.[user.id] > 0 ? 'text-emerald-500' : 'text-slate-400'}`}>
-                      {c.lastMessageAt ? formatTimeAgo(c.lastMessageAt) : ""}
-                    </p>
+                <div className="flex-1 min-w-0">
+                  <div className="flex justify-between items-baseline mb-1">
+                    <p className="font-black text-white text-[15px] truncate">{p?.name}</p>
+                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">{c.lastMessageAt ? formatTimeAgo(c.lastMessageAt) : ""}</p>
                   </div>
-                  <div className="flex justify-between items-center mt-0.5">
-                    <p className={`text-[13px] truncate ${c.unreadCount?.[user.id] > 0 ? 'text-slate-800 font-bold' : 'text-slate-500 font-medium'}`}>
-                      {c.lastMessage || "Click to start chatting"}
-                    </p>
-                    {c.unreadCount?.[user.id] > 0 && <div className="bg-emerald-500 text-white text-[10px] font-black min-w-[20px] h-5 flex items-center justify-center rounded-full ml-2 px-1">{c.unreadCount[user.id]}</div>}
-                  </div>
+                  <p className="text-[12px] text-white/40 truncate font-bold leading-tight">{p?._id.toString() === user.id.toString() ? "You: " : ""}{c.lastMessage || "Start a connection"}</p>
                 </div>
+                {c.unreadCount?.[user.id] > 0 && <div className="bg-indigo-500 text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-lg shadow-lg shadow-indigo-500/40">{c.unreadCount[user.id]}</div>}
               </div>
             );
           })}
         </div>
       </aside>
 
-      {/* ── Chat Window ── */}
-      <main key={activeConv?._id || "empty"} className={`flex-1 h-full flex-col bg-[#F0F2F5] relative ${activeConv ? "flex" : "hidden md:flex"}`}>
+      {/* ── Chat Window (Main Thread) ── */}
+      <main key={activeConv?._id || "empty"} className={`flex-1 h-full flex-col bg-[#0F172A] relative ${activeConv ? "flex" : "hidden md:flex"}`}>
         {activeConv ? (
           <>
-            <header className="sticky top-0 z-10 bg-[#F0F2F5] flex items-center p-3 px-4 gap-3 shrink-0">
-              <button onClick={() => setActiveConv(null)} className="md:hidden p-1 text-slate-500"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg></button>
-              <img src={activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.name || "U")}&background=F5F3FF&color=7C3AED&bold=true`} className="w-10 h-10 rounded-full border border-slate-200" alt="" />
+            <header className="sticky top-0 z-10 bg-[#0F172A]/80 backdrop-blur-xl border-b border-white/5 flex items-center p-4 px-6 gap-4 shrink-0 shadow-2xl">
+              <button onClick={() => setActiveConv(null)} className="md:hidden p-2 text-white/40 hover:text-white transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg></button>
+              <img src={activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.name || "U")}&background=random`} className="w-12 h-12 rounded-2xl border border-white/10" alt="" />
               <div className="flex-1 min-w-0">
-                <h3 className="font-bold text-slate-800 truncate text-[15px] leading-tight">
-                  {activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.name}
-                </h3>
-                <p className="text-[11px] font-medium text-slate-500 mt-0.5 leading-none">
-                  {(() => {
-                    const other = activeConv.participants.find((p) => p._id.toString() !== user.id.toString());
-                    const isOnline = other && onlineUsers.some((id) => id.toString() === other._id.toString());
-                    if (isOnline) return <span className="text-emerald-600 font-bold">online</span>;
-                    const lSeen = lastSeenMap[other?._id?.toString()] || other?.lastSeen;
-                    return lSeen ? `last seen ${formatTimeAgo(lSeen)}` : "offline";
-                  })()}
-                </p>
+                <h3 className="font-black text-white truncate text-lg tracking-tight">{activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.name}</h3>
+                <div className="flex items-center gap-2 mt-0.5">
+                   {(() => {
+                      const other = activeConv.participants.find((p) => p._id.toString() !== user.id.toString());
+                      const isOnline = other && onlineUsers.some((id) => id.toString() === other._id.toString());
+                      return (
+                         <>
+                            <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-white/10"}`}></div>
+                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30">{isOnline ? "Active Core" : `Last seen ${formatTimeAgo(lastSeenMap[other?._id?.toString()] || other?.lastSeen)}`}</span>
+                         </>
+                      );
+                   })()}
+                </div>
               </div>
-              <div className="flex gap-4 text-slate-500">
-                <button onClick={() => setPendingCall({ type: 'video' })} className="p-2 hover:bg-slate-200 rounded-full transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
-                <button onClick={() => setPendingCall({ type: 'audio' })} className="p-2 hover:bg-slate-200 rounded-full transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></button>
-                <button className="p-2 hover:bg-slate-200 rounded-full transition-all"><svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg></button>
+              <div className="flex gap-4">
+                <button onClick={() => setPendingCall({ type: 'video' })} className="w-12 h-12 bg-white/5 hover:bg-indigo-600/20 text-white/40 hover:text-indigo-400 rounded-2xl flex items-center justify-center transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
+                <button onClick={() => setPendingCall({ type: 'audio' })} className="w-12 h-12 bg-white/5 hover:bg-emerald-600/20 text-white/40 hover:text-emerald-400 rounded-2xl flex items-center justify-center transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></button>
               </div>
             </header>
-            <div className="flex-1 overflow-y-auto p-4 md:p-8 space-y-4 bg-[#E5DDD5] bg-opacity-40 custom-scrollbar" style={{ backgroundImage: "url('https://user-images.githubusercontent.com/15075759/28719144-86dc0f70-73b1-11e7-911d-60d70fcded21.png')", backgroundBlendMode: "overlay" }}>
+            
+            <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6 custom-scrollbar bg-[radial-gradient(ellipse_at_top,#1E293B,transparent)]">
               {messages.map((m, i) => {
                 const isMe = m.senderId?._id?.toString() === user?.id?.toString();
                 return (
                   <div key={m._id || i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div className={`px-2.5 py-1.5 max-w-[85%] md:max-w-[65%] shadow-[0_1px_0.5px_rgba(0,0,0,0.13)] rounded-lg relative ${isMe ? "bg-[#D9FDD3]" : "bg-white"}`}>
-                      <p className="text-[14.2px] text-[#111b21] leading-[19px] whitespace-pre-wrap">{m.content}</p>
-                      <div className="flex items-center justify-end gap-1.5 mt-0.5 ml-8 h-4 relative">
-                        <span className="text-[11px] text-[#667781] uppercase">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', hour12: false })}</span>
-                        {isMe && <div className="flex -space-x-1">{m.status === "READ" ? <><svg className="w-4 h-4 text-[#53bdeb]" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><svg className="w-4 h-4 text-[#53bdeb]" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></> : <svg className={`w-4 h-4 ${m.status === "DELIVERED" ? "text-[#8696a0]" : "text-[#8696a0]/50"}`} fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>}</div>}
+                    <div className={`px-6 py-4 max-w-[85%] md:max-w-[65%] shadow-2xl relative ${isMe ? "bg-indigo-600 text-white rounded-[2rem] rounded-tr-none" : "bg-slate-800 text-slate-100 rounded-[2rem] rounded-tl-none border border-white/5"}`}>
+                      <p className="text-[14px] md:text-[15px] font-bold leading-relaxed">{m.content}</p>
+                      <div className="flex items-center justify-end gap-2 mt-2 opacity-30">
+                        <span className="text-[9px] font-black uppercase tracking-widest">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                        {isMe && <div className="flex -space-x-1">{m.status === "READ" ? <><svg className="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><svg className="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></> : <svg className={`w-4 h-4 ${m.status === "DELIVERED" ? "text-white" : "text-white/40"}`} fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>}</div>}
                       </div>
                     </div>
                   </div>
                 );
               })}
               {activeConv.participants.filter(p => typingUsers.has(p._id.toString())).map(p => (
-                <div key={p._id} className="bg-white/80 backdrop-blur-sm rounded-full px-4 py-1.5 w-fit flex gap-1 items-center shadow-sm"><span className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce"></span><span className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce delay-100"></span><span className="w-1 h-1 bg-emerald-500 rounded-full animate-bounce delay-200"></span><span className="text-[10px] font-bold text-emerald-600 ml-1">typing...</span></div>
+                <div key={p._id} className="bg-white/5 backdrop-blur-sm rounded-full px-6 py-2 w-fit flex gap-1.5 items-center animate-bounce-in"><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-100"></span><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-200"></span><span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Decoding message...</span></div>
               ))}
               <div ref={bottomRef} className="h-4" />
             </div>
-            <div className="sticky bottom-0 bg-[#F0F2F5] p-2 md:p-3 px-4 flex gap-4 items-center shrink-0">
-              <div className="flex gap-4 text-slate-500">
-                 <button className="hover:text-slate-700 transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></button>
-                 <button className="hover:text-slate-700 transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg></button>
+
+            <div className="sticky bottom-0 p-6 md:p-8 shrink-0 flex gap-4 items-center bg-gradient-to-t from-[#0F172A] to-transparent">
+              <div className="flex-1 relative group">
+                 <input type="text" value={reply} onChange={handleTyping} onKeyDown={(e) => e.key === 'Enter' && handleSend(e)} placeholder="Send encrypted transmission..." className="w-full px-8 py-5 bg-white/5 border border-white/5 rounded-[2.5rem] text-[15px] font-bold text-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white/10 focus:border-indigo-500/50 transition-all shadow-2xl" />
+                 <button className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 hover:text-white"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg></button>
               </div>
-              <input type="text" value={reply} onChange={handleTyping} onKeyDown={(e) => e.key === 'Enter' && handleSend(e)} placeholder="Type a message" className="flex-1 px-4 py-2.5 bg-white rounded-lg text-[15px] outline-none shadow-sm" />
-              <button onClick={handleSend} disabled={sending || !reply.trim()} className="text-slate-500 hover:text-emerald-600 transition-all disabled:opacity-30">
-                {reply.trim() ? <svg className="w-6 h-6 rotate-90" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg> : <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M19 11a7 7 0 01-7 7m0 0a7 7 0 01-7-7m7 7v4m0 0H8m4 0h4m-4-8a3 3 0 01-3-3V5a3 3 0 116 0v6a3 3 0 01-3 3z"/></svg>}
-              </button>
+              <button onClick={handleSend} disabled={sending || !reply.trim()} className="w-16 h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.8rem] flex items-center justify-center shadow-[0_20px_50px_-10px_rgba(79,70,229,0.5)] active:scale-90 disabled:opacity-30 disabled:grayscale transition-all"><svg className="w-7 h-7 rotate-90" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg></button>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-[#F0F2F5] border-b-4 border-emerald-500">
-            <img src="https://static.whatsapp.net/rsrc.php/v3/y6/r/wa699P6f9ST.png" className="w-64 mb-10 opacity-80" alt="" />
-            <h2 className="text-3xl font-light text-[#41525d] mb-4">WhatsApp Web</h2>
-            <p className="text-[14px] text-[#667781] max-w-lg leading-relaxed">Send and receive messages without keeping your phone online.<br/>Use WhatsApp on up to 4 linked devices and 1 phone at the same time.</p>
-            <div className="mt-auto flex items-center gap-2 text-[14px] text-[#8696a0]"><svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20"><path fillRule="evenodd" d="M5 9V7a5 5 0 0110 0v2a2 2 0 012 2v5a2 2 0 01-2 2H5a2 2 0 01-2-2v-5a2 2 0 012-2zm8-2v2H7V7a3 3 0 016 0z" clipRule="evenodd"/></svg> End-to-end encrypted</div>
+          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-[#0F172A]">
+            <div className="w-32 h-32 bg-indigo-600/10 rounded-[3rem] flex items-center justify-center shadow-2xl mb-10 group animate-pulse">
+               <svg className="w-12 h-12 text-indigo-500 transform group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" /></svg>
+            </div>
+            <h2 className="text-4xl font-black text-white tracking-tighter mb-4">Select Transmission.</h2>
+            <p className="text-white/20 text-sm font-bold max-w-sm uppercase tracking-[0.3em] leading-loose">Establish a secure end-to-end encrypted connection from the identity sidebar.</p>
           </div>
         )}
       </main>
 
-      {/* 📞 Call Interfaces */}
+      {/* 📞 Call Interfaces (WhatsApp-like Confirmation) */}
       {pendingCall && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[2.5rem] p-10 shadow-2xl max-w-sm w-full text-center space-y-8 animate-bounce-in">
-             <div className="w-20 h-20 bg-indigo-50 rounded-[1.5rem] flex items-center justify-center text-3xl mx-auto">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
+          <div className="bg-slate-900 border border-white/10 rounded-[3.5rem] p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] max-w-sm w-full text-center space-y-10 animate-bounce-in">
+             <div className="w-24 h-24 bg-indigo-600/20 rounded-[2rem] flex items-center justify-center text-4xl mx-auto shadow-2xl border border-indigo-500/20 animate-pulse">
                 {pendingCall.type === 'video' ? '🎥' : '📞'}
              </div>
              <div>
-                <h3 className="text-xl font-black text-slate-800">Start {pendingCall.type} call?</h3>
-                <p className="text-sm text-slate-400 font-medium mt-2">Connecting with {activeConv.participants.find(p => p._id.toString() !== user.id.toString())?.name}</p>
+                <h3 className="text-2xl font-black text-white tracking-tight italic uppercase">Initiate {pendingCall.type}?</h3>
+                <p className="text-xs text-white/30 font-black uppercase tracking-[0.3em] mt-4">Connecting with {activeConv.participants.find(p => p._id.toString() !== user.id.toString())?.name}</p>
              </div>
              <div className="flex gap-4">
-                <button onClick={() => setPendingCall(null)} className="flex-1 py-4 bg-slate-100 text-slate-600 text-xs font-black uppercase tracking-widest rounded-2xl">Cancel</button>
-                <button onClick={() => initiateCall(pendingCall.type)} className="flex-1 py-4 bg-indigo-600 text-white text-xs font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-100">Start Call</button>
+                <button onClick={() => setPendingCall(null)} className="flex-1 py-5 bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] hover:bg-white/10 transition-all">Abort</button>
+                <button onClick={() => initiateCallRequest(pendingCall.type)} className="flex-1 py-5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-[1.5rem] shadow-2xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all">Confirm Call</button>
              </div>
           </div>
         </div>
       )}
 
       {incomingCall && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm p-6">
-          <div className="bg-white rounded-[2rem] p-8 shadow-2xl max-w-sm w-full text-center space-y-6">
-            <div className="w-16 h-16 bg-indigo-50 rounded-2xl flex items-center justify-center text-2xl mx-auto">{incomingCall.callType === "video" ? "🎥" : "📞"}</div>
-            <h3 className="font-bold text-slate-800">{incomingCall.fromName}</h3>
-            <div className="flex gap-2"><button onClick={() => { socketRef.current.emit("reject-call", { to: incomingCall.from }); setIncomingCall(null); }} className="flex-1 py-3 bg-rose-50 text-rose-600 text-xs font-bold rounded-full">Reject</button><button onClick={() => { setActiveCall({ ...incomingCall, isIncoming: true }); setIncomingCall(null); }} className="flex-1 py-3 bg-indigo-600 text-white text-xs font-bold rounded-full">Answer</button></div>
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#0F172A]/90 backdrop-blur-xl p-6">
+          <div className="bg-slate-900 border border-white/10 rounded-[4rem] p-12 shadow-2xl max-w-sm w-full text-center space-y-10 animate-bounce-in">
+            <div className="w-24 h-24 bg-emerald-500/10 rounded-[2.5rem] flex items-center justify-center text-4xl mx-auto border border-emerald-500/20 animate-bounce">
+              {incomingCall.callType === "video" ? "🎥" : "📞"}
+            </div>
+            <div>
+              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.5em] mb-4">Incoming Transmission</p>
+              <h3 className="text-3xl font-black text-white tracking-tighter italic">{incomingCall.fromName}</h3>
+            </div>
+            <div className="flex gap-4">
+              <button onClick={() => { socketRef.current.emit("call_rejected", { to: incomingCall.from }); setIncomingCall(null); }} className="flex-1 py-5 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-[1.8rem] hover:bg-rose-500/20 transition-all">Reject</button>
+              <button onClick={() => { 
+                // The receiver accepts the call and opens the Modal.
+                // The Modal will handle the signal exchange.
+                setActiveCall({ ...incomingCall, isIncoming: true, accepted: true });
+                setIncomingCall(null); 
+              }} className="flex-1 py-5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-[1.8rem] shadow-2xl shadow-indigo-500/40 hover:bg-indigo-500 transition-all">Authorize</button>
+            </div>
           </div>
         </div>
       )}
+      
       {activeCall && <CallModal call={activeCall} socket={socketRef.current} onClose={() => setActiveCall(null)} />}
     </div>
   );

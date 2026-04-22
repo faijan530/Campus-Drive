@@ -66,7 +66,7 @@ export default function TestPage() {
     if (!test) return;
     setSubmitting(true);
     try {
-      await api.post("/api/test/submit", { testId: test.id || test._id, answers: answersArray }, token);
+      await api.post("/api/test/submit", { testId: test.id || test._id, answers: answersArray, source }, token);
       navigate(source === 'MANUAL' ? '/exam/result' : '/app/profile', { replace: true });
     } catch (err) {
       setWarning(err.message || "Submit failed");
@@ -110,6 +110,7 @@ export default function TestPage() {
     const handleVisibilityChange = () => { 
       if (document.hidden) {
         console.warn("Anti-cheating: Tab switch detected. Initiating auto-submission.");
+        sendProctoring('TAB_SWITCH', { reason: 'Tab switched while test active' });
         submit('AUTO_SUBMIT_TAB_SWITCH'); 
       }
     };

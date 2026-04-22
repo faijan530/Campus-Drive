@@ -3,6 +3,7 @@ import mongoose from "mongoose";
 export const ProctoringEventType = Object.freeze({
   TAB_SWITCH: "TAB_SWITCH",
   INACTIVITY: "INACTIVITY",
+  VIOLATION: "VIOLATION",
 });
 
 const proctoringSchema = new mongoose.Schema(

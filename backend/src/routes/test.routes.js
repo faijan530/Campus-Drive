@@ -155,6 +155,7 @@ const submitSchema = z.object({
       })
     )
     .default([]),
+  source: z.string().optional(),
 });
 
 // Student: submit test
@@ -169,7 +170,7 @@ testRoutes.post(
       studentId: req.auth.userId,
       testId: parsed.data.testId,
       answers: parsed.data.answers,
-      source: "MANUAL",
+      source: parsed.data.source || "MANUAL",
     });
     res.json({ result });
   })

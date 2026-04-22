@@ -12,7 +12,7 @@ proctoringRoutes.use(requireAuth);
 
 const eventSchema = z.object({
   testId: z.string().min(1),
-  type: z.enum(["TAB_SWITCH", "INACTIVITY"]),
+  type: z.enum(["TAB_SWITCH", "INACTIVITY", "VIOLATION"]),
   meta: z.record(z.any()).optional(),
   // Optional: current answers snapshot for safe auto-submit
   answers: z

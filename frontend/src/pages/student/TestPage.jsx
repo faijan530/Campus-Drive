@@ -185,7 +185,7 @@ export default function TestPage() {
         serverOffsetRef.current = new Date(started.serverNow).getTime() - Date.now();
         const q = await api.get(`/api/test/${started.test.id}/questions`, token);
         if (cancelled) return;
-        setQuestions(q.questions || []);
+        setQuestions((q.questions || []).slice(0, 30));
       } catch (err) {
         if (!cancelled) setWarning(err.message || "Failed to load test");
       } finally {

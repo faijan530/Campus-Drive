@@ -20,18 +20,30 @@ export const submissionService = {
     const exists = await Result.exists({ studentId, testId });
     if (exists) throw forbidden("Result already exists; no resubmission allowed");
 
-    const { score, totalQuestions } = await evaluationService.evaluate({ testId, answers });
+    const { score, totalQuestions, answeredCount } = await evaluationService.evaluate({ testId, answers });
+    
+    const durationSeconds = Math.floor((now.getTime() - new Date(attempt.startedAt).getTime()) / 1000);
 
     await Result.create({
       studentId,
       testId,
       score,
+      totalQuestions,
+      answeredCount,
+      durationSeconds,
       submittedAt: now,
     });
 
     await attemptService.markSubmitted(attempt, { status: finalStatus, endedAt: now });
 
-    return { score, totalQuestions, status: finalStatus, submittedAt: now.toISOString() };
+    return { 
+      score, 
+      totalQuestions, 
+      answeredCount, 
+      durationSeconds, 
+      status: finalStatus, 
+      submittedAt: now.toISOString() 
+    };
   },
 
   async getResultForStudent({ studentId, testId }) {

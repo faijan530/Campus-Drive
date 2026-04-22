@@ -14,15 +14,18 @@ export const evaluationService = {
     const correctById = new Map(questions.map((q) => [q._id.toString(), q.correctAnswer]));
 
     let score = 0;
+    let answeredCount = 0;
     for (const a of answers) {
       const qid = a?.questionId?.toString?.() ?? a?.questionId;
       const selected = a?.selectedOption;
       if (!qid || !selected) continue;
+      
+      answeredCount += 1;
       const correct = correctById.get(String(qid));
       if (correct && String(selected).toUpperCase() === String(correct).toUpperCase()) score += 1;
     }
 
-    return { score, totalQuestions: questions.length };
+    return { score, totalQuestions: questions.length, answeredCount };
   },
 };
 

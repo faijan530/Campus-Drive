@@ -29,6 +29,7 @@ export const questionService = {
     const qs = await Question.find({ testId })
       .select("question optionA optionB optionC optionD")
       .sort({ createdAt: 1 })
+      .limit(30)
       .lean();
 
     if (!qs) throw notFound("Questions not found");
@@ -41,6 +42,7 @@ export const questionService = {
   async getQuestionsForEvaluation(testId) {
     const qs = await Question.find({ testId })
       .select("+correctAnswer question optionA optionB optionC optionD")
+      .limit(30)
       .lean();
     return qs;
   },

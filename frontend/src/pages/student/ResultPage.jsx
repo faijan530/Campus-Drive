@@ -47,12 +47,21 @@ export default function ResultPage() {
 
   const scorePercent = useMemo(() => {
     const s = Number(result?.score ?? 0);
-    const total = Number(result?.totalQuestions ?? result?.maxScore ?? 100);
+    const total = Number(result?.totalQuestions ?? 30);
     return Math.round((s / total) * 100);
   }, [result]);
 
+  const isPassed = scorePercent >= 50;
+
   const perf = labelFromPercent(scorePercent);
   const grade = getGradeFromPercent(scorePercent);
+
+  const formatDuration = (seconds) => {
+    if (!seconds) return "—";
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}m ${s}s`;
+  };
 
   if (loading) return (
      <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
@@ -74,7 +83,9 @@ export default function ResultPage() {
     <div className="space-y-12 animate-fade-in max-w-6xl mx-auto pb-20">
       {/* ── Page Header ────────────────────────────────────────── */}
       <div className="text-center space-y-4">
-        <div className="inline-block px-4 py-1.5 rounded-full bg-indigo-50 border border-indigo-100 text-[10px] font-black text-indigo-500 uppercase tracking-[0.3em]">Evaluation Finalized</div>
+        <div className={`inline-block px-4 py-1.5 rounded-full border text-[10px] font-black uppercase tracking-[0.3em] ${isPassed ? 'bg-emerald-50 border-emerald-100 text-emerald-500' : 'bg-rose-50 border-rose-100 text-rose-500'}`}>
+          {isPassed ? 'Assessment Passed' : 'Assessment Failed'}
+        </div>
         <h1 className="text-5xl font-black text-slate-900 tracking-tighter">Performance Quotient</h1>
         <p className="text-sm font-bold text-slate-400 uppercase tracking-[0.4em]">Official Assessment Audit Report</p>
       </div>
@@ -88,7 +99,7 @@ export default function ResultPage() {
               <div className="grid lg:grid-cols-2 gap-16 items-center relative z-10">
                 <div className="flex flex-col items-center justify-center space-y-8">
                   <div className="relative p-6 bg-white rounded-full shadow-2xl scale-110">
-                     <ProgressRing value={scorePercent} label={perf.label} sublabel={`${scorePercent}%`} size={220} strokeWidth={12} color="#4f46e5" />
+                     <ProgressRing value={scorePercent} label={perf.label} sublabel={`${scorePercent}%`} size={220} strokeWidth={12} color={isPassed ? "#10b981" : "#4f46e5"} />
                   </div>
                   <div className="text-center">
                      <div className={`text-8xl font-black ${grade.color} leading-none tracking-tighter`}>{grade.grade}</div>
@@ -108,9 +119,10 @@ export default function ResultPage() {
 
                    <div className="grid grid-cols-2 gap-6">
                       {[
-                        { l: "Test Protocol", v: result?.testTitle || "Evaluation", i: "📋" },
-                        { l: "Raw Quotient", v: `${result?.score ?? 0} / ${result?.totalQuestions ?? 100}`, i: "🎯" },
-                        { l: "Time Efficiency", v: result?.durationMinutes ? `${result.durationMinutes}m` : "—", i: "⏱️" },
+                        { l: "Status", v: isPassed ? "PASSED" : "FAILED", i: isPassed ? "✅" : "❌" },
+                        { l: "Raw Quotient", v: `${result?.score ?? 0} / ${result?.totalQuestions ?? 30}`, i: "🎯" },
+                        { l: "Attempted", v: `${result?.answeredCount ?? 0} Questions`, i: "📝" },
+                        { l: "Time Taken", v: formatDuration(result?.durationSeconds), i: "⏱️" },
                         { l: "Validation At", v: result?.submittedAt ? new Date(result.submittedAt).toLocaleDateString("en-IN", { day: '2-digit', month: 'short' }) : "—", i: "📅" }
                       ].map((stat, i) => (
                         <div key={i} className="bg-white border border-slate-50 p-6 rounded-3xl shadow-sm hover:shadow-lg transition-all group/stat">
@@ -126,25 +138,23 @@ export default function ResultPage() {
         </div>
 
         {/* ── Sub-stats Grid ───────────────────────────────────── */}
-        {result?.stats && (
-           <div className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-8">
-              {[
-                { l: "Payload Size", v: result.stats.totalQuestions, c: "slate" },
-                { l: "Successful HITS", v: result.stats.answered, c: "emerald" },
-                { l: "Gaps Detected", v: result.stats.unanswered, c: "amber" },
-                { l: "Operational Time", v: result.stats.timeUsed, c: "indigo" }
-              ].map((s, i) => (
-                <div key={i} className="bg-white border border-white p-8 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.03)] text-center group hover:bg-slate-900 transition-all duration-500">
-                   <div className={`text-3xl font-black mb-2 transition-colors duration-500 ${
-                      s.c === "emerald" ? "text-emerald-500 group-hover:text-emerald-400" :
-                      s.c === "amber" ? "text-amber-500 group-hover:text-amber-400" :
-                      s.c === "indigo" ? "text-indigo-500 group-hover:text-indigo-400" : "text-slate-800 group-hover:text-white"
-                   }`}>{s.v || "—"}</div>
-                   <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-slate-500">{s.l}</div>
-                </div>
-              ))}
-           </div>
-        )}
+        <div className="lg:col-span-12 grid grid-cols-2 md:grid-cols-4 gap-8">
+           {[
+             { l: "Payload Size", v: result?.totalQuestions ?? 30, c: "slate" },
+             { l: "Successful HITS", v: result?.score ?? 0, c: "emerald" },
+             { l: "Gaps Detected", v: (result?.totalQuestions ?? 30) - (result?.answeredCount ?? 0), c: "amber" },
+             { l: "Operational Time", v: formatDuration(result?.durationSeconds), c: "indigo" }
+           ].map((s, i) => (
+             <div key={i} className="bg-white border border-white p-8 rounded-[2.5rem] shadow-[0_32px_64px_-12px_rgba(0,0,0,0.03)] text-center group hover:bg-slate-900 transition-all duration-500">
+                <div className={`text-3xl font-black mb-2 transition-colors duration-500 ${
+                   s.c === "emerald" ? "text-emerald-500 group-hover:text-emerald-400" :
+                   s.c === "amber" ? "text-amber-500 group-hover:text-amber-400" :
+                   s.c === "indigo" ? "text-indigo-500 group-hover:text-indigo-400" : "text-slate-800 group-hover:text-white"
+                }`}>{s.v || "—"}</div>
+                <div className="text-[9px] font-black text-slate-400 uppercase tracking-[0.2em] group-hover:text-slate-500">{s.l}</div>
+             </div>
+           ))}
+        </div>
 
         {/* ── Action Control Panel ───────────────────────────── */}
         <div className="lg:col-span-12 flex flex-col sm:flex-row gap-6 justify-center pt-8">

@@ -8,6 +8,7 @@ export default function CollaborationHub() {
   const tabs = user?.role === "Student" ? [
     { name: "Find Partner", path: "/app/collaboration/partners", exact: true, icon: "🔍" },
     { name: "My Requests", path: "/app/collaboration/partners/my-requests", exact: false, icon: "📬" },
+    { name: "My Applications", path: "/app/collaboration/partners/my-applications", exact: false, icon: "🕊️" },
     { name: "Mentorship", path: "/app/collaboration/mentorship", exact: false, icon: "🎓" },
     { name: "Chats", path: "/app/collaboration/chats", exact: false, icon: "💬" },
   ] : [

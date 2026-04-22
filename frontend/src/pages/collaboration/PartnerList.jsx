@@ -63,6 +63,9 @@ export default function PartnerList() {
                       {skill}
                     </span>
                   ))}
+                  <span className="text-[9px] font-black uppercase tracking-widest px-3 py-1.5 bg-emerald-50 text-emerald-600 rounded-lg border border-emerald-100">
+                     {req.applicantCount || 0} Applied
+                  </span>
                </div>
 
                <div className="pt-6 border-t border-slate-50 flex justify-end">

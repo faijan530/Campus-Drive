@@ -23,7 +23,14 @@ export const getPartnerRequests = asyncHandler(async (req, res) => {
   const requests = await PartnerRequest.find({ status: "Open" })
     .populate("userId", "name email")
     .sort({ createdAt: -1 }).lean();
-  res.json({ requests });
+  
+  // Attach application count to each request
+  const requestsWithCounts = await Promise.all(requests.map(async (r) => {
+    const count = await PartnerApplication.countDocuments({ requestId: r._id });
+    return { ...r, applicantCount: count };
+  }));
+
+  res.json({ requests: requestsWithCounts });
 });
 
 export const getPartnerRequestById = asyncHandler(async (req, res) => {
@@ -91,6 +98,30 @@ export const acceptApplication = asyncHandler(async (req, res) => {
   }
 
   res.json({ application: app, conversation: conv });
+});
+
+export const getMyApplications = asyncHandler(async (req, res) => {
+  const applications = await PartnerApplication.find({ applicantId: req.auth.userId })
+    .populate({
+      path: "requestId",
+      populate: { path: "userId", select: "name email" }
+    })
+    .sort({ createdAt: -1 })
+    .lean();
+  res.json({ applications });
+});
+
+export const closePartnerRequest = asyncHandler(async (req, res) => {
+  const pr = await PartnerRequest.findById(req.params.id);
+  if (!pr) throw notFound("Request not found");
+
+  if (pr.userId.toString() !== req.auth.userId) {
+    throw forbidden("Only owner can close request");
+  }
+
+  pr.status = "Closed";
+  await pr.save();
+  res.json({ request: pr });
 });
 
 // -- Doubts --

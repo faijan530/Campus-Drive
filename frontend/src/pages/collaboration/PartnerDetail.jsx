@@ -74,9 +74,24 @@ export default function PartnerDetail() {
               Posted by <span className="font-semibold">{request.userId.name}</span> • {new Date(request.createdAt).toLocaleDateString()}
             </p>
           </div>
-          <span className={`text-xs font-bold px-3 py-1 rounded-full border ${request.status === "Open" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}`}>
-            {request.status}
-          </span>
+          <div className="flex flex-col items-end gap-2">
+            <span className={`text-xs font-bold px-3 py-1 rounded-full border ${request.status === "Open" ? "bg-emerald-50 text-emerald-700 border-emerald-200" : "bg-slate-100 text-slate-600 border-slate-200"}`}>
+              {request.status}
+            </span>
+            {isOwner && request.status === "Open" && (
+              <button 
+                onClick={async () => {
+                  if (window.confirm("Are you sure you want to close this request?")) {
+                    await closePartnerRequest(request._id, token);
+                    fetchData();
+                  }
+                }}
+                className="text-[10px] font-black uppercase tracking-widest text-rose-500 hover:text-rose-700 transition-colors"
+              >
+                Close Request
+              </button>
+            )}
+          </div>
         </div>
 
         <div className="mt-6">

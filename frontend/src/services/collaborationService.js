@@ -4,8 +4,10 @@ export const getPartners = (token) => api.get("/api/collab/partners", token);
 export const getPartnerById = (id, token) => api.get(`/api/collab/partners/${id}`, token);
 export const createPartnerRequest = (data, token) => api.post("/api/collab/partners", data, token);
 export const getMyRequests = (token) => api.get("/api/collab/partners/my-requests", token);
+export const getMyApplications = (token) => api.get("/api/collab/partners/my-applications", token);
 export const applyForPartner = (id, data, token) => api.post(`/api/collab/partners/${id}/apply`, data, token);
 export const acceptApplication = (appId, token) => api.post(`/api/collab/partners/apply/${appId}/accept`, {}, token);
+export const closePartnerRequest = (id, token) => api.post(`/api/collab/partners/${id}/close`, {}, token);
 
 export const getDoubts = (token) => api.get("/api/collab/doubts", token);
 export const getDoubtById = (id, token) => api.get(`/api/collab/doubts/${id}`, token);

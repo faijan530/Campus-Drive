@@ -31,6 +31,7 @@ import PartnerList from "./pages/collaboration/PartnerList.jsx";
 import CreatePartnerRequest from "./pages/collaboration/CreatePartnerRequest.jsx";
 import PartnerDetail from "./pages/collaboration/PartnerDetail.jsx";
 import MyRequests from "./pages/collaboration/MyRequests.jsx";
+import MyApplications from "./pages/collaboration/MyApplications.jsx";
 import DoubtList from "./pages/collaboration/DoubtList.jsx";
 import AskDoubt from "./pages/collaboration/AskDoubt.jsx";
 import DoubtDetail from "./pages/collaboration/DoubtDetail.jsx";
@@ -134,6 +135,7 @@ export default function App() {
            <Route path="partners/new" element={<CreatePartnerRequest />} />
            <Route path="partners/:id" element={<PartnerDetail />} />
            <Route path="partners/my-requests" element={<MyRequests />} />
+           <Route path="partners/my-applications" element={<MyApplications />} />
            <Route path="mentorship" element={<DoubtList />} />
            <Route path="mentorship/ask" element={<AskDoubt />} />
            <Route path="mentorship/:id" element={<DoubtDetail />} />

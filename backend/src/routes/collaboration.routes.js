@@ -4,7 +4,7 @@ import { requireRole } from "../middleware/roleMiddleware.js";
 import { Roles } from "../utils/roles.js";
 
 import {
-  createPartnerRequest, getPartnerRequests, getPartnerRequestById, applyForPartner, getMyRequests, acceptApplication,
+  createPartnerRequest, getPartnerRequests, getPartnerRequestById, applyForPartner, getMyRequests, acceptApplication, getMyApplications, closePartnerRequest,
   createDoubt, getDoubts, getDoubtById, resolveDoubt,
   getMessages, postMessage, getMyConversations, getUnreadCount, askAiAssistant,
   openConversation, getOrCreateDirectConversation
@@ -18,8 +18,10 @@ collabRoutes.use(requireAuth);
 collabRoutes.post("/partners", requireRole(Roles.STUDENT), createPartnerRequest);
 collabRoutes.get("/partners", getPartnerRequests);
 collabRoutes.get("/partners/my-requests", requireRole(Roles.STUDENT), getMyRequests);
+collabRoutes.get("/partners/my-applications", requireRole(Roles.STUDENT), getMyApplications);
 collabRoutes.get("/partners/:id", getPartnerRequestById);
 collabRoutes.post("/partners/:id/apply", requireRole(Roles.STUDENT), applyForPartner);
+collabRoutes.post("/partners/:id/close", requireRole(Roles.STUDENT), closePartnerRequest);
 collabRoutes.post("/partners/apply/:appId/accept", requireRole(Roles.STUDENT), acceptApplication);
 
 // Doubts

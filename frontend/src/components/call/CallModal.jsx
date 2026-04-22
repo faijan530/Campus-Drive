@@ -11,25 +11,36 @@ export default function CallModal({ call, socket, onClose }) {
   const [isMuted, setIsMuted] = useState(false);
   const [isCameraOff, setIsCameraOff] = useState(false);
 
+  const iceQueueRef = useRef([]);
+
   useEffect(() => {
     // 1. Initialize Peer Connection (Once)
     if (!pcRef.current) {
         pcRef.current = new RTCPeerConnection({
-            iceServers: [{ urls: "stun:stun.l.google.com:19302" }]
+            iceServers: [
+                { urls: "stun:stun.l.google.com:19302" },
+                { urls: "stun:stun1.l.google.com:19302" },
+                { urls: "stun:stun2.l.google.com:19302" },
+                { urls: "stun:stun3.l.google.com:19302" },
+                { urls: "stun:stun4.l.google.com:19302" }
+            ]
         });
         console.log("[WebRTC] RTCPeerConnection Initialized");
 
         pcRef.current.ontrack = (event) => {
-            console.log("[WebRTC] OnTrack: Remote Stream Received", event.streams[0]);
+            console.log("[WebRTC] OnTrack: Remote Track Received", event.track.kind);
             if (remoteVideo.current) {
-                remoteVideo.current.srcObject = event.streams[0];
+                const stream = (event.streams && event.streams[0]) ? event.streams[0] : new MediaStream([event.track]);
+                if (remoteVideo.current.srcObject !== stream) {
+                    remoteVideo.current.srcObject = stream;
+                }
+                remoteVideo.current.play().catch(err => console.warn("[WebRTC] Auto-play prevented:", err));
             }
             setCallStatus("Connected");
         };
 
         pcRef.current.onicecandidate = (event) => {
             if (event.candidate) {
-                console.log("[WebRTC] OnIceCandidate: Sending candidate");
                 socket.emit("ice_candidate", {
                     to: call.from,
                     candidate: event.candidate
@@ -39,75 +50,84 @@ export default function CallModal({ call, socket, onClose }) {
 
         pcRef.current.onconnectionstatechange = () => {
             console.log("[WebRTC] Connection State:", pcRef.current.connectionState);
-            if (pcRef.current.connectionState === "connected") setCallStatus("Connected");
-            if (pcRef.current.connectionState === "failed") setCallStatus("Connection Failed");
-            if (pcRef.current.connectionState === "connecting") setCallStatus("Connecting Path...");
+            const state = pcRef.current.connectionState;
+            if (state === "connected") setCallStatus("Connected");
+            if (state === "failed") setCallStatus("Connection Failed");
+            if (state === "disconnected") setCallStatus("Disconnected");
+            if (state === "connecting") setCallStatus("Establishing Path...");
         };
-    }
-
-    if (call.accepted && !call.isIncoming && callStatus === "Ringing...") {
-        setCallStatus("Connecting...");
     }
 
     const peer = pcRef.current;
 
-    // 2. Setup Media and Negotiation
-    const startMediaAndNegotiate = async () => {
+    // 2. Setup Media and Negotiation (Robustly)
+    const getMedia = async () => {
+        if (localStreamRef.current) return localStreamRef.current;
         try {
-            if (!localStreamRef.current) {
-                console.log("[WebRTC] Requesting Media Permissions...");
-                const stream = await navigator.mediaDevices.getUserMedia({
-                    video: call.callType === "video",
-                    audio: true
-                });
-                localStreamRef.current = stream;
-                if (localVideo.current) localVideo.current.srcObject = stream;
-                stream.getTracks().forEach((track) => peer.addTrack(track, stream));
-            }
-
-            // Negotiation Trigger: If we are the caller and the receiver has accepted
-            if (!call.isIncoming && call.accepted && peer.signalingState === "stable") {
-                console.log("[WebRTC] Creating Offer...");
-                const offer = await peer.createOffer();
-                await peer.setLocalDescription(offer);
-                socket.emit("call_accepted", { to: call.from, signal: offer });
-            }
+            const stream = await navigator.mediaDevices.getUserMedia({
+                video: call.callType === "video",
+                audio: true
+            });
+            localStreamRef.current = stream;
+            if (localVideo.current) localVideo.current.srcObject = stream;
+            stream.getTracks().forEach((track) => peer.addTrack(track, stream));
+            return stream;
         } catch (err) {
-            console.error("[WebRTC] Media Error:", err);
             setCallStatus("Media Error");
+            throw err;
         }
     };
 
-    startMediaAndNegotiate();
+    const processIceQueue = async () => {
+        while (iceQueueRef.current.length > 0) {
+            const candidate = iceQueueRef.current.shift();
+            try {
+                await peer.addIceCandidate(new RTCIceCandidate(candidate));
+            } catch (e) {
+                console.error("[WebRTC] Error adding queued ICE candidate", e);
+            }
+        }
+    };
+
+    const startNegotiationIfNeeded = async () => {
+        if (!call.isIncoming && call.accepted && peer.signalingState === "stable") {
+            try {
+                await getMedia();
+                const offer = await peer.createOffer();
+                await peer.setLocalDescription(offer);
+                socket.emit("call_accepted", { to: call.from, signal: offer });
+            } catch (err) { console.error("[WebRTC] Offer Error:", err); }
+        }
+    };
+
+    startNegotiationIfNeeded();
 
     // 3. Signaling Listeners
     const handleSignal = async (data) => {
-        console.log("[WebRTC] handleSignal:", data);
         try {
             if (data.signal) {
                 if (data.signal.type === "offer") {
-                    console.log("[WebRTC] Setting Remote Offer...");
                     await peer.setRemoteDescription(new RTCSessionDescription(data.signal));
-                    console.log("[WebRTC] Creating Answer...");
+                    await getMedia();
                     const answer = await peer.createAnswer();
                     await peer.setLocalDescription(answer);
                     socket.emit("call_accepted", { to: call.from, signal: answer });
+                    await processIceQueue();
                 } else if (data.signal.type === "answer") {
-                    console.log("[WebRTC] Setting Remote Answer...");
                     await peer.setRemoteDescription(new RTCSessionDescription(data.signal));
+                    await processIceQueue();
                 }
-            } else if (data.answer) {
-                console.log("[WebRTC] Setting Explicit Remote Answer...");
-                await peer.setRemoteDescription(new RTCSessionDescription(data.answer));
             }
         } catch (err) { console.error("[WebRTC] Signal Error:", err); }
     };
 
     const handleCandidate = async ({ candidate }) => {
+        if (!candidate || !peer) return;
         try {
-            if (candidate && peer) {
-                console.log("[WebRTC] Adding ICE Candidate...");
+            if (peer.remoteDescription && peer.remoteDescription.type) {
                 await peer.addIceCandidate(new RTCIceCandidate(candidate));
+            } else {
+                iceQueueRef.current.push(candidate);
             }
         } catch (err) { console.error("[WebRTC] Candidate Error:", err); }
     };
@@ -128,7 +148,8 @@ export default function CallModal({ call, socket, onClose }) {
         socket.off("end_call", handleCallEnded);
         socket.off("call_rejected", handleCallEnded);
     };
-  }, [call, socket]); // call.accepted change will trigger the negotiation block
+  }, [call.accepted, call.isIncoming, call.from, call.callType, socket, onClose]);
+
 
   const cleanup = () => {
     if (localStreamRef.current) {
@@ -136,10 +157,14 @@ export default function CallModal({ call, socket, onClose }) {
         localStreamRef.current = null;
     }
     if (pcRef.current) {
+        pcRef.current.onicecandidate = null;
+        pcRef.current.ontrack = null;
+        pcRef.current.onconnectionstatechange = null;
         pcRef.current.close();
         pcRef.current = null;
     }
   };
+
 
   const endCall = () => {
     socket.emit("end_call", { to: call.from });

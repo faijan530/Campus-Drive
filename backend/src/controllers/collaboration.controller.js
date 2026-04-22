@@ -179,7 +179,7 @@ export const getMessages = asyncHandler(async (req, res) => {
   // Mark all unread messages in this conversation as read by the user
   await Message.updateMany(
     { conversationId: convId, senderId: { $ne: req.auth.userId }, readBy: { $ne: req.auth.userId } },
-    { $addToSet: { readBy: req.auth.userId } }
+    { $addToSet: { readBy: req.auth.userId }, $set: { status: "READ" } }
   );
 
   const messages = await Message.find({ conversationId: convId })

@@ -62,6 +62,14 @@ export default function ChatHub() {
     socket.on("typing", (id) => setTypingUsers((prev) => new Set(prev).add(id)));
     socket.on("stop-typing", (id) => setTypingUsers((prev) => { const n = new Set(prev); n.delete(id); return n; }));
 
+    socket.on("message-status-update", (msg) => {
+      setMessages((prev) => prev.map((m) => (m.tempId === msg.tempId || m._id === msg._id ? { ...m, ...msg } : m)));
+    });
+
+    socket.on("message-read", (msg) => {
+      setMessages((prev) => prev.map((m) => (m._id === msg._id ? { ...m, status: "READ" } : m)));
+    });
+
     // 📞 Call Events
     socket.on("incoming_call", (data) => {
        console.log("[Signal] Incoming Call Request:", data);
@@ -276,7 +284,18 @@ export default function ChatHub() {
                       <p className="text-[14px] md:text-[15px] font-bold leading-relaxed">{m.content}</p>
                       <div className="flex items-center justify-end gap-2 mt-2 opacity-30">
                         <span className="text-[9px] font-black uppercase tracking-widest">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
-                        {isMe && <div className="flex -space-x-1">{m.status === "READ" ? <><svg className="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg><svg className="w-4 h-4 text-emerald-300" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg></> : <svg className={`w-4 h-4 ${m.status === "DELIVERED" ? "text-white" : "text-white/40"}`} fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>}</div>}
+                        {isMe && (
+                          <div className="flex -space-x-1.5">
+                            {m.status === "SENT" ? (
+                              <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                            ) : (
+                              <>
+                                <svg className={`w-4 h-4 ${m.status === "READ" ? "text-emerald-400" : "text-white/60"}`} fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                                <svg className={`w-4 h-4 ${m.status === "READ" ? "text-emerald-400" : "text-white/60"}`} fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                              </>
+                            )}
+                          </div>
+                        )}
                       </div>
                     </div>
                   </div>

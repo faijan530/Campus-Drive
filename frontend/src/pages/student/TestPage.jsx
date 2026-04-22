@@ -36,40 +36,14 @@ export default function TestPage() {
   const inactivityRef = useRef({ last: Date.now(), timer: null });
   const violationRef = useRef({ count: 0, lastViolation: 0 });
 
-  useEffect(() => {
-    const handleContextMenu = (e) => { e.preventDefault(); return false; };
-    const handleKeyDown = (e) => {
-      if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())) { e.preventDefault(); return false; }
-      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase()))) { e.preventDefault(); return false; }
-    };
-    const handleVisibilityChange = () => { if (document.hidden) handleViolation('Tab switched'); };
-    const handleViolation = (reason) => {
-      const now = Date.now();
-      if (now - violationRef.current.lastViolation > 5000) {
-        violationRef.current.count++;
-        violationRef.current.lastViolation = now;
-        setViolations(violationRef.current.count);
-        setWarning(`CRITICAL: Violation ${violationRef.current.count}/3 [${reason}]`);
-        if (violationRef.current.count >= 3) submit('AUTO_SUBMIT_VIOLATIONS');
-        sendProctoring('VIOLATION', { reason, count: violationRef.current.count });
-      }
-    };
+  // 1. Memoized Values First
+  const answersArray = useMemo(() => Array.from(answers.entries()).map(([questionId, selectedOption]) => ({ questionId, selectedOption })), [answers]);
 
-    document.addEventListener('contextmenu', handleContextMenu);
-    document.addEventListener('keydown', handleKeyDown);
-    document.addEventListener('visibilitychange', handleVisibilityChange);
-    
-    return () => {
-      document.removeEventListener('contextmenu', handleContextMenu);
-      document.removeEventListener('keydown', handleKeyDown);
-      document.removeEventListener('visibilitychange', handleVisibilityChange);
-    };
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
-    return () => clearInterval(interval);
-  }, []);
+  const unansweredCount = useMemo(() => {
+    let u = 0;
+    for (const q of questions) if (!answers.get(q._id)) u += 1;
+    return u;
+  }, [answers, questions]);
 
   const questionTimeLimit = useMemo(() => {
     if (!test || !questions.length) return 0;
@@ -86,14 +60,91 @@ export default function TestPage() {
 
   const endsAtMs = attempt?.endsAt ? new Date(attempt.endsAt).getTime() : 0;
   const remainingMs = Math.max(0, endsAtMs - (currentTime + serverOffsetRef.current));
-  
-  const unansweredCount = useMemo(() => {
-    let u = 0;
-    for (const q of questions) if (!answers.get(q._id)) u += 1;
-    return u;
-  }, [answers, questions]);
 
-  const answersArray = useMemo(() => Array.from(answers.entries()).map(([questionId, selectedOption]) => ({ questionId, selectedOption })), [answers]);
+  // 2. Critical Functions (hoisted but kept here for clarity)
+  async function submit(source = "MANUAL") {
+    if (!test) return;
+    setSubmitting(true);
+    try {
+      await api.post("/api/test/submit", { testId: test.id || test._id, answers: answersArray }, token);
+      navigate(source === 'MANUAL' ? '/exam/result' : '/app/profile', { replace: true });
+    } catch (err) {
+      setWarning(err.message || "Submit failed");
+    } finally {
+      setSubmitting(false);
+      setSubmitOpen(false);
+    }
+  }
+
+  async function sendProctoring(type, meta) {
+    if (!test) return;
+    try {
+      const res = await api.post("/api/proctoring/event", { testId: test.id || test._id, type, meta, answers: answersArray }, token);
+      if (res?.autoSubmitted) navigate("/exam/result", { replace: true });
+    } catch {}
+  }
+
+  // 3. Side Effects (After hooks they depend on)
+  useEffect(() => {
+    if (!test) return;
+
+    const handleContextMenu = (e) => { 
+      e.preventDefault(); 
+      handleViolation('Restricted Action: Context Menu');
+      return false; 
+    };
+
+    const handleKeyDown = (e) => {
+      if ((e.ctrlKey || e.metaKey) && ['c', 'v', 'x', 'a'].includes(e.key.toLowerCase())) { 
+        e.preventDefault(); 
+        handleViolation('Restricted Action: Copy/Paste/Select');
+        return false; 
+      }
+      if (e.key === 'F12' || (e.ctrlKey && e.shiftKey && ['i', 'j', 'c'].includes(e.key.toLowerCase()))) { 
+        e.preventDefault(); 
+        handleViolation('Restricted Action: DevTools');
+        return false; 
+      }
+    };
+
+    const handleVisibilityChange = () => { 
+      if (document.hidden) {
+        console.warn("Anti-cheating: Tab switch detected. Initiating auto-submission.");
+        submit('AUTO_SUBMIT_TAB_SWITCH'); 
+      }
+    };
+
+    const handleViolation = (reason) => {
+      const now = Date.now();
+      if (now - violationRef.current.lastViolation > 5000) {
+        violationRef.current.count++;
+        violationRef.current.lastViolation = now;
+        setViolations(violationRef.current.count);
+        setWarning(`WARNING: Violation ${violationRef.current.count}/3 [${reason}]`);
+        
+        sendProctoring('VIOLATION', { reason, count: violationRef.current.count });
+        
+        if (violationRef.current.count >= 3) {
+          submit('AUTO_SUBMIT_VIOLATIONS');
+        }
+      }
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    document.addEventListener('keydown', handleKeyDown);
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+      document.removeEventListener('keydown', handleKeyDown);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [test, answersArray, submit]);
+
+  useEffect(() => {
+    const interval = setInterval(() => setCurrentTime(Date.now()), 1000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (questions[idx] && !lockedQuestions.has(questions[idx]._id)) {
@@ -110,28 +161,6 @@ export default function TestPage() {
       }
     }
   }, [questionRemainingMs, idx, questions, lockedQuestions]);
-
-  async function sendProctoring(type, meta) {
-    if (!test) return;
-    try {
-      const res = await api.post("/api/proctoring/event", { testId: test.id || test._id, type, meta, answers: answersArray }, token);
-      if (res?.autoSubmitted) navigate("/exam/result", { replace: true });
-    } catch {}
-  }
-
-  async function submit(source = "MANUAL") {
-    if (!test) return;
-    setSubmitting(true);
-    try {
-      await api.post("/api/test/submit", { testId: test.id || test._id, answers: answersArray }, token);
-      navigate(source === 'MANUAL' ? '/exam/result' : '/app/profile', { replace: true });
-    } catch (err) {
-      setWarning(err.message || "Submit failed");
-    } finally {
-      setSubmitting(false);
-      setSubmitOpen(false);
-    }
-  }
 
   useEffect(() => {
     let cancelled = false;
@@ -394,5 +423,3 @@ export default function TestPage() {
     </div>
   );
 }
-
-   

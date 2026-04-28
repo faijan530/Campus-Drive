@@ -3,91 +3,75 @@ import { useState } from "react";
 function CareerCard({ rec, lightMode = true }) {
   const [expanded, setExpanded] = useState(false);
 
-  const colors = lightMode ? {
-    txt: "text-slate-800",
-    sub: "text-slate-400",
-    bg: "bg-white",
-    hover: "hover:shadow-2xl",
-    border: "border-slate-50",
-    pill: "bg-slate-100 text-slate-500",
-    expand: "bg-slate-50"
-  } : {
-    txt: "text-white",
-    sub: "text-indigo-200",
-    bg: "bg-indigo-900/40",
-    hover: "hover:bg-indigo-800/50",
-    border: "border-indigo-500/20",
-    pill: "bg-indigo-500/20 text-indigo-200",
-    expand: "bg-indigo-950/40"
-  };
-
   return (
-    <div className={`overflow-hidden rounded-[2rem] border transition-all duration-500 ${colors.bg} ${colors.border} ${colors.hover} ${expanded ? 'ring-2 ring-indigo-500/20' : ''}`}>
+    <div className={`overflow-hidden rounded-xl border transition-shadow bg-white border-slate-200 ${expanded ? 'ring-2 ring-blue-500/20 shadow-md' : 'hover:shadow-sm'}`}>
       <div 
-        className={`p-6 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-6 relative group`}
+        className="p-5 cursor-pointer flex flex-col md:flex-row md:items-center justify-between gap-4 relative group"
         onClick={() => setExpanded(!expanded)}
       >
         <div className="flex-1">
           <div className="flex items-center gap-3 mb-2">
-            <h3 className={`text-xl font-black tracking-tight ${colors.txt}`}>{rec.career}</h3>
-            <span className={`text-[9px] font-black uppercase tracking-[0.2em] px-3 py-1 rounded-full ${rec.score >= 70 ? 'bg-emerald-500 text-white' : 'bg-indigo-500 text-white'}`}>
+            <h3 className="text-lg font-bold text-slate-900">{rec.career}</h3>
+            <span className={`text-xs font-semibold px-2.5 py-0.5 rounded-full ${rec.score >= 70 ? 'bg-green-100 text-green-700' : 'bg-blue-100 text-blue-700'}`}>
               {rec.label}
             </span>
           </div>
-          <div className="flex items-center gap-4">
-             <div className="flex-1 max-w-[120px] bg-white/10 rounded-full h-1.5 overflow-hidden">
-                <div className="h-full bg-indigo-400 rounded-full shadow-[0_0_10px_rgba(129,140,248,0.5)]" style={{ width: `${rec.score}%` }}></div>
+          <div className="flex items-center gap-3">
+             <div className="flex-1 max-w-[150px] bg-slate-100 rounded-full h-2 overflow-hidden">
+                <div className="h-full bg-blue-500 rounded-full" style={{ width: `${rec.score}%` }}></div>
              </div>
-             <span className={`text-[11px] font-black ${colors.sub}`}>Match Authority: {rec.score}%</span>
+             <span className="text-sm font-medium text-slate-600">Match Score: {rec.score}%</span>
           </div>
         </div>
         
-        <div className="flex items-center gap-4">
-           <span className={`text-[10px] font-black uppercase tracking-widest ${colors.sub} opacity-60`}>
-             {expanded ? "Collapse Analysis" : "Inspect Match"}
+        <div className="flex items-center gap-3">
+           <span className="text-sm font-medium text-slate-500">
+             {expanded ? "Hide Details" : "View Details"}
            </span>
-           <div className={`w-10 h-10 rounded-xl flex items-center justify-center transition-all ${expanded ? 'bg-indigo-500 text-white rotate-180' : 'bg-slate-100 text-slate-400'}`}>
-              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="3"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
+           <div className={`w-8 h-8 rounded-full flex items-center justify-center transition-transform bg-slate-100 text-slate-500 group-hover:bg-slate-200 ${expanded ? 'rotate-180' : ''}`}>
+              <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="2"><path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" /></svg>
            </div>
         </div>
       </div>
 
-      <div className={`transition-all duration-700 ease-in-out ${expanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"} overflow-hidden`}>
-        <div className={`p-8 space-y-10 border-t border-white/5 ${colors.expand}`}>
+      <div className={`transition-all duration-300 ease-in-out ${expanded ? "max-h-[1000px] opacity-100" : "max-h-0 opacity-0"} overflow-hidden`}>
+        <div className="p-6 space-y-6 border-t border-slate-100 bg-slate-50/50">
           <div>
-            <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-4 ${colors.sub} opacity-50`}>Scientific Basis</h4>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <h4 className="text-sm font-bold text-slate-800 mb-3">Why this matches you</h4>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
               {rec.insights.map((insight, idx) => (
-                <div key={idx} className="flex gap-4 p-5 bg-white/5 rounded-2xl border border-white/5 group/insight">
-                  <div className="w-8 h-8 rounded-lg bg-indigo-500/10 flex items-center justify-center text-indigo-400 shrink-0 group-hover/insight:scale-110 transition-transform">✦</div>
-                  <p className={`text-xs font-bold leading-relaxed ${colors.txt} opacity-80`}>{insight}</p>
+                <div key={idx} className="flex gap-3 p-4 bg-white rounded-lg border border-slate-200">
+                  <div className="w-6 h-6 rounded-md bg-blue-50 flex items-center justify-center text-blue-600 shrink-0">
+                    <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                  </div>
+                  <p className="text-sm text-slate-700">{insight}</p>
                 </div>
               ))}
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row gap-10">
+          <div className="flex flex-col md:flex-row gap-6">
              <div className="flex-1">
-                <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-4 text-amber-400/70`}>Delta Gaps</h4>
-                <div className="space-y-3">
+                <h4 className="text-sm font-bold text-slate-800 mb-3">Skills to Fill</h4>
+                <div className="space-y-2">
                   {rec.gaps.map((gap, idx) => (
-                    <div key={idx} className="flex items-center gap-4 p-4 bg-amber-500/5 rounded-2xl border border-amber-500/10">
-                      <span className="text-amber-500 font-bold shrink-0">!</span>
-                      <p className={`text-xs font-bold ${colors.txt} opacity-70`}>{gap}</p>
+                    <div key={idx} className="flex items-start gap-3 p-3 bg-white rounded-lg border border-slate-200">
+                      <svg className="w-5 h-5 text-amber-500 shrink-0 mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                      <p className="text-sm text-slate-700">{gap}</p>
                     </div>
                   ))}
                 </div>
              </div>
              
              <div className="flex-1">
-                <h4 className={`text-[10px] font-black uppercase tracking-[0.3em] mb-4 text-emerald-400/70`}>Execution roadmap</h4>
-                <div className="space-y-6 relative ml-3">
-                  <div className="absolute left-0 top-2 bottom-2 w-0.5 bg-emerald-500/20"></div>
+                <h4 className="text-sm font-bold text-slate-800 mb-3">Recommended Steps</h4>
+                <div className="space-y-4 relative ml-2">
+                  <div className="absolute left-[7px] top-2 bottom-2 w-0.5 bg-slate-200"></div>
                   {rec.roadmap.map((step, idx) => (
-                    <div key={idx} className="relative pl-8 group/step">
-                      <div className="absolute left-[-5px] top-1.5 w-3 h-3 bg-emerald-500 rounded-full shadow-[0_0_10px_rgba(16,185,129,0.5)] group-hover/step:scale-150 transition-transform"></div>
-                      <p className={`text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-1`}>Phase {idx + 1}</p>
-                      <p className={`text-xs font-bold ${colors.txt}`}>{step}</p>
+                    <div key={idx} className="relative pl-6">
+                      <div className="absolute left-0 top-1.5 w-4 h-4 bg-white border-2 border-green-500 rounded-full z-10"></div>
+                      <p className="text-xs font-semibold text-slate-500 mb-1 uppercase tracking-wide">Step {idx + 1}</p>
+                      <p className="text-sm text-slate-700">{step}</p>
                     </div>
                   ))}
                 </div>
@@ -102,19 +86,18 @@ function CareerCard({ rec, lightMode = true }) {
 export default function CareerRecommendations({ recommendations, lightMode = true }) {
   if (!recommendations || recommendations.length === 0) {
     return (
-      <div className="text-center py-12 bg-white/5 px-8 rounded-[2rem] border border-white/5">
-        <p className="text-xs font-black uppercase tracking-widest text-slate-400">Intelligence Insufficient</p>
-        <p className="text-[11px] font-bold text-slate-500 mt-2">Populate skills and projects to calibrate recommendations.</p>
+      <div className="text-center py-10 bg-slate-50 px-6 rounded-xl border border-slate-200">
+        <p className="text-sm font-bold text-slate-700">Not enough data</p>
+        <p className="text-sm text-slate-500 mt-1">Add more skills and projects to get personalized career recommendations.</p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       {recommendations.map((rec, idx) => (
         <CareerCard key={idx} rec={rec} lightMode={lightMode} />
       ))}
     </div>
   );
 }
-

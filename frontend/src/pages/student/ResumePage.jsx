@@ -36,10 +36,10 @@ export default function ResumePage() {
 
     if (!file) return;
     if (file.type !== "application/pdf") {
-      return setUploadError("Incompatible format. Only PDF payloads are accepted.");
+      return setUploadError("Invalid file type. Please upload a PDF.");
     }
     if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      return setUploadError(`Payload exceeds limit. Maximum allowed size is ${MAX_SIZE_MB} MB.`);
+      return setUploadError(`File is too large. Maximum size is ${MAX_SIZE_MB} MB.`);
     }
 
     setUploading(true);
@@ -66,131 +66,121 @@ export default function ResumePage() {
   }
 
   return (
-    <div className="space-y-10 animate-fade-in max-w-4xl mx-auto pb-20">
-      <div className="text-center px-4">
-        <h1 className="text-4xl font-black text-slate-800 tracking-tight">Document Repository</h1>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.3em] mt-2">Manage your verified professional summary</p>
+    <div className="max-w-4xl mx-auto space-y-6 pb-20">
+      <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h1 className="text-2xl font-bold text-slate-900">Resume Management</h1>
+        <p className="text-sm text-slate-500 mt-1">Upload and manage your resume for recruiters</p>
       </div>
 
       {/* Upload Zone */}
-      <div className="bg-white/70 backdrop-blur-3xl border border-white rounded-[4rem] p-12 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] relative overflow-hidden group">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-indigo-50/50 rounded-full blur-3xl -z-0"></div>
-        
-        <div className="relative z-10">
-          <div
-            id="resume-drop-zone"
-            className={`relative border-2 border-dashed rounded-[3rem] p-16 text-center transition-all duration-500 cursor-pointer overflow-hidden
-              ${dragging ? "border-indigo-400 bg-indigo-50/50 scale-[0.98]" : "border-slate-200 hover:border-indigo-300 hover:bg-slate-50/50"}`}
-            onClick={() => fileRef.current?.click()}
-            onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
-            onDragLeave={() => setDragging(false)}
-            onDrop={onDrop}
-          >
-            {dragging && <div className="absolute inset-0 bg-indigo-500/5 animate-pulse"></div>}
-            
-            <div className="flex flex-col items-center gap-6 relative z-10">
-              <div className={`w-24 h-24 rounded-[2rem] flex items-center justify-center transition-all duration-500 shadow-2xl ${dragging ? 'bg-indigo-600 text-white animate-bounce' : 'bg-white text-indigo-500 border border-slate-50'}`}>
-                {uploading ? (
-                  <div className="w-10 h-10 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-                ) : (
-                  <svg className="w-10 h-10" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5}
-                      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
-                  </svg>
-                )}
-              </div>
-              
-              <div className="space-y-2">
-                <p className="text-xl font-black text-slate-800 tracking-tight">
-                  {uploading ? "Transmitting Payload..." : dragging ? "Release to Initiate" : "Deployment Zone"}
-                </p>
-                <p className="text-sm font-bold text-slate-400">
-                  Drag and drop your PDF here, or <span className="text-indigo-600 underline">browse filesystem</span>
-                </p>
-              </div>
-
-              <div className="flex gap-4">
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">Format: AI-Readable PDF</span>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-slate-300 bg-slate-50 px-4 py-2 rounded-xl border border-slate-100">Size Limit: {MAX_SIZE_MB} MB</span>
-              </div>
+      <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+        <h2 className="text-lg font-bold text-slate-900 mb-4">Upload Resume</h2>
+        <div
+          className={`border-2 border-dashed rounded-xl p-12 text-center transition-colors cursor-pointer
+            ${dragging ? "border-blue-500 bg-blue-50" : "border-slate-300 hover:border-slate-400 hover:bg-slate-50"}`}
+          onClick={() => fileRef.current?.click()}
+          onDragOver={(e) => { e.preventDefault(); setDragging(true); }}
+          onDragLeave={() => setDragging(false)}
+          onDrop={onDrop}
+        >
+          <div className="flex flex-col items-center gap-4">
+            <div className={`w-16 h-16 rounded-full flex items-center justify-center ${dragging ? 'bg-blue-100 text-blue-600' : 'bg-slate-100 text-slate-500'}`}>
+              {uploading ? (
+                <div className="w-8 h-8 border-4 border-slate-200 border-t-blue-600 rounded-full animate-spin"></div>
+              ) : (
+                <svg className="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+              )}
             </div>
-            <input
-              ref={fileRef}
-              type="file"
-              accept="application/pdf"
-              className="hidden"
-              onChange={onFileInput}
-            />
+            
+            <div>
+              <p className="text-base font-semibold text-slate-800">
+                {uploading ? "Uploading..." : "Click to upload or drag and drop"}
+              </p>
+              <p className="text-sm text-slate-500 mt-1">
+                Format: PDF (Max size: {MAX_SIZE_MB}MB)
+              </p>
+            </div>
           </div>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="application/pdf"
+            className="hidden"
+            onChange={onFileInput}
+          />
+        </div>
 
-          <div className="mt-8 space-y-3">
-            {uploadError && (
-              <div className="bg-rose-50 border border-rose-100 rounded-2xl p-4 flex gap-3 items-center animate-shake">
-                 <div className="w-2 h-2 bg-rose-500 rounded-full"></div>
-                 <p className="text-[10px] font-black text-rose-600 uppercase tracking-widest">{uploadError}</p>
-              </div>
-            )}
-            {uploadSuccess && (
-              <div className="bg-emerald-50 border border-emerald-100 rounded-2xl p-4 flex gap-3 items-center animate-bounce-subtle">
-                 <div className="w-2 h-2 bg-emerald-500 rounded-full"></div>
-                 <p className="text-[10px] font-black text-emerald-600 uppercase tracking-widest">Document synchronization successful</p>
-              </div>
-            )}
-          </div>
+        <div className="mt-4">
+          {uploadError && (
+            <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded-md text-sm font-medium flex items-center gap-2">
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+               {uploadError}
+            </div>
+          )}
+          {uploadSuccess && (
+            <div className="bg-green-50 border border-green-200 text-green-700 px-4 py-3 rounded-md text-sm font-medium flex items-center gap-2">
+               <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M5 13l4 4L19 7"/></svg>
+               Resume uploaded successfully.
+            </div>
+          )}
         </div>
       </div>
 
       {/* Current Resume */}
-      <div className="bg-white/80 backdrop-blur-3xl border border-white rounded-[3rem] p-10 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.03)] overflow-hidden relative">
-        <h2 className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] mb-8">Active Asset</h2>
+      <div className="bg-white border border-slate-200 rounded-xl shadow-sm overflow-hidden">
+        <div className="px-6 py-4 border-b border-slate-100 bg-slate-50">
+          <h2 className="text-sm font-bold text-slate-800 uppercase tracking-wide">Current Resume</h2>
+        </div>
         
-        <div>
+        <div className="p-6">
           {loading ? (
             <div className="flex items-center gap-4 animate-pulse">
-               <div className="w-16 h-16 bg-slate-100 rounded-2xl"></div>
+               <div className="w-12 h-12 bg-slate-200 rounded-md"></div>
                <div className="space-y-2">
-                  <div className="w-32 h-4 bg-slate-100 rounded"></div>
-                  <div className="w-20 h-3 bg-slate-50 rounded"></div>
+                  <div className="w-32 h-4 bg-slate-200 rounded"></div>
+                  <div className="w-20 h-3 bg-slate-100 rounded"></div>
                </div>
             </div>
           ) : error ? (
-            <p className="text-sm font-bold text-rose-500">{error}</p>
+            <p className="text-sm font-medium text-red-500">{error}</p>
           ) : !resume ? (
-            <div className="text-center py-10 bg-slate-50/50 rounded-[2rem] border border-dashed border-slate-200">
-               <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest">No active resume found in repository</p>
+            <div className="text-center py-8">
+               <p className="text-sm text-slate-500">No resume uploaded yet.</p>
             </div>
           ) : (
-            <div className="flex items-center justify-between flex-wrap gap-8 group/card">
-              <div className="flex items-center gap-6">
-                <div className="w-20 h-20 bg-indigo-50 border border-indigo-100 rounded-[2rem] flex items-center justify-center shadow-lg group-hover/card:scale-110 transition-transform duration-500">
-                  <svg className="w-8 h-8 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <div className="flex items-center justify-between flex-wrap gap-4">
+              <div className="flex items-center gap-4">
+                <div className="w-12 h-12 bg-blue-50 text-blue-600 rounded-lg flex items-center justify-center">
+                  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                   </svg>
                 </div>
                 <div>
-                  <h4 className="text-lg font-black text-slate-800 tracking-tight">{resume.filename}</h4>
-                  <div className="flex gap-4 mt-1">
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{formatBytes(resume.size)}</p>
-                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Modified {new Date(resume.uploadedAt).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric"})}</p>
+                  <h4 className="text-base font-semibold text-slate-900">{resume.filename}</h4>
+                  <div className="flex gap-3 mt-0.5 text-xs text-slate-500">
+                    <span>{formatBytes(resume.size)}</span>
+                    <span>•</span>
+                    <span>Uploaded {new Date(resume.uploadedAt).toLocaleDateString("en-US", { day: "numeric", month: "short", year: "numeric"})}</span>
                   </div>
-                  <span className="text-[9px] font-black text-emerald-500 bg-emerald-50 px-2 py-0.5 rounded uppercase tracking-tighter mt-2 inline-block">Production Ready</span>
                 </div>
               </div>
 
-              <div className="flex gap-4 w-full md:w-auto">
+              <div className="flex gap-3 w-full sm:w-auto">
                 <button
                   onClick={() => fileRef.current?.click()}
-                  className="flex-1 md:flex-none px-8 py-4 text-[10px] font-black uppercase tracking-widest text-slate-400 border border-slate-100 rounded-2xl hover:bg-slate-50 transition-all"
+                  className="flex-1 sm:flex-none px-4 py-2 text-sm font-semibold text-slate-700 bg-white border border-slate-300 rounded-md hover:bg-slate-50 transition-colors text-center"
                 >
-                  Swap File
+                  Replace
                 </button>
                 <a
                   href={`${BASE_URL}/api/resume/download?token=${token}`}
-                  className="flex-1 md:flex-none px-10 py-4 text-[10px] font-black uppercase tracking-widest text-white bg-slate-800 rounded-2xl shadow-xl hover:bg-black transition-all active:scale-95 text-center flex items-center justify-center gap-2"
+                  className="flex-1 sm:flex-none px-4 py-2 text-sm font-semibold text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 transition-colors text-center flex items-center justify-center gap-2 shadow-sm"
                   download
                 >
-                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
-                  Export PDF
+                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>
+                  Download
                 </a>
               </div>
             </div>
@@ -198,28 +188,15 @@ export default function ResumePage() {
         </div>
       </div>
 
-      <div className="bg-indigo-50/50 rounded-[3rem] p-10 border border-indigo-100/30">
-        <h3 className="text-[11px] font-black text-indigo-400 uppercase tracking-[0.2em] mb-6 px-1">Compliance Guidelines</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-           <div className="flex gap-4">
-              <span className="text-xl">📄</span>
-              <p className="text-xs font-bold text-indigo-600/70 leading-relaxed">Standard PDF format ensures your profile remains pixel-perfect during recruiter inspections.</p>
-           </div>
-           <div className="flex gap-4">
-              <span className="text-xl">⚡</span>
-              <p className="text-xs font-bold text-indigo-600/70 leading-relaxed">Keep your file under {MAX_SIZE_MB}MB to ensure immediate accessibility on employer dashboards.</p>
-           </div>
-           <div className="flex gap-4">
-              <span className="text-xl">🎯</span>
-              <p className="text-xs font-bold text-indigo-600/70 leading-relaxed">Verification scores are automatically recalibrated upon each document synchronization.</p>
-           </div>
-           <div className="flex gap-4">
-              <span className="text-xl">🛡️</span>
-              <p className="text-xs font-bold text-indigo-600/70 leading-relaxed">New uploads permanently overwrite previous versions in the secure vault.</p>
-           </div>
-        </div>
+      <div className="bg-slate-50 rounded-xl p-6 border border-slate-200">
+        <h3 className="text-sm font-bold text-slate-800 mb-3">Upload Guidelines</h3>
+        <ul className="space-y-2 text-sm text-slate-600 list-disc list-inside">
+           <li>Please upload only PDF format documents to ensure compatibility.</li>
+           <li>Keep your file size under {MAX_SIZE_MB}MB.</li>
+           <li>Uploading a new resume will automatically replace your previous one.</li>
+           <li>Ensure your contact information is up to date in the document.</li>
+        </ul>
       </div>
     </div>
   );
 }
-

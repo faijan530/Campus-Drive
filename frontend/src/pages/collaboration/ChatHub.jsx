@@ -78,7 +78,6 @@ export default function ChatHub() {
 
     socket.on("call_accepted", (data) => {
        console.log("[Signal] Call Accepted notification received:", data);
-       // Caller side: Receiver has accepted, we transition to CallModal
        setActiveCall((prev) => {
           if (!prev) return null;
           return { ...prev, accepted: true };
@@ -185,7 +184,7 @@ export default function ChatHub() {
     setPendingCall(null);
   };
 
-  if (loading) return <div className="h-screen flex items-center justify-center font-black animate-pulse bg-[#0F172A] text-white">INITIALIZING PROTOCOL...</div>;
+  if (loading) return <div className="h-[calc(100vh-64px)] flex items-center justify-center text-slate-500">Loading messages...</div>;
 
   const filtered = conversations.filter((c) => {
     const p = c.participants.find((pa) => pa._id.toString() !== user.id.toString()) || c.participants[0];
@@ -193,54 +192,44 @@ export default function ChatHub() {
   });
 
   return (
-    <div className="h-screen w-full flex flex-col md:flex-row bg-[#0F172A] overflow-hidden text-sm">
+    <div className="h-[calc(100vh-64px)] w-full flex flex-col md:flex-row bg-white border-t border-slate-200 overflow-hidden text-sm">
       
-      {/* ── Vertical Rail (Desktop) ── */}
-      <nav className="hidden md:flex w-[72px] flex-col items-center py-6 bg-slate-900 border-r border-white/5 gap-8 shrink-0">
-         <div className="w-10 h-10 bg-indigo-600 rounded-2xl flex items-center justify-center text-white font-black shadow-lg shadow-indigo-500/20">CD.</div>
-         <button className="p-3 text-indigo-400 bg-indigo-500/10 rounded-2xl transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"/></svg></button>
-         <button className="p-3 text-white/20 hover:text-white transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg></button>
-         <button className="p-3 text-white/20 hover:text-white transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
-         <div className="mt-auto flex flex-col items-center gap-6 pb-2">
-            <img src={user.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=random`} className="w-10 h-10 rounded-2xl border border-white/10" alt="" />
-         </div>
-      </nav>
-
       {/* ── Chat Sidebar (Conversations) ── */}
-      <aside className={`h-full md:w-[400px] border-r border-white/5 flex-col bg-slate-900 shrink-0 ${activeConv ? "hidden md:flex" : "flex w-full"}`}>
-        <div className="p-6 border-b border-white/5 flex flex-col gap-6">
+      <aside className={`h-full md:w-80 lg:w-96 border-r border-slate-200 flex-col bg-white shrink-0 ${activeConv ? "hidden md:flex" : "flex w-full"}`}>
+        <div className="p-4 border-b border-slate-200 flex flex-col gap-4">
           <div className="flex justify-between items-center">
-            <h1 className="text-2xl font-black text-white tracking-tight">Messages.</h1>
-            <button className="w-10 h-10 bg-white/5 hover:bg-white/10 text-white rounded-xl flex items-center justify-center transition-all">
-               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M12 4v16m8-8H4"/></svg>
+            <h1 className="text-xl font-bold text-slate-800">Messaging</h1>
+            <button className="p-2 hover:bg-slate-100 text-slate-500 rounded-md transition-colors">
+               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4v16m8-8H4"/></svg>
             </button>
           </div>
           <div className="relative group">
-            <input type="text" placeholder="Search conversations..." value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-12 pr-4 py-3 bg-white/5 rounded-2xl text-xs font-bold text-white placeholder:text-white/20 focus:outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white/10 transition-all" />
-            <svg className="w-5 h-5 absolute left-4 top-1/2 -translate-y-1/2 text-white/20" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
+            <input type="text" placeholder="Search messages" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} className="w-full pl-10 pr-4 py-2 bg-slate-100 border border-transparent rounded-md text-sm text-slate-800 placeholder:text-slate-500 focus:outline-none focus:bg-white focus:border-blue-500 transition-colors" />
+            <svg className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" /></svg>
           </div>
         </div>
-        <div className="flex-1 overflow-y-auto custom-scrollbar">
+        <div className="flex-1 overflow-y-auto">
           {filtered.map((c) => {
             const p = c.participants.find((pa) => pa._id.toString() !== user.id.toString()) || c.participants[0];
             const isActive = activeConv?._id === c._id;
             const isOnline = p && onlineUsers.some((id) => id.toString() === p._id.toString());
+            const unread = c.unreadCount?.[user.id] > 0;
             return (
-              <div key={c._id} onClick={() => handleOpenChat(c)} className={`flex items-center gap-4 p-5 cursor-pointer border-b border-white/[0.02] transition-all ${isActive ? "bg-white/[0.05]" : "hover:bg-white/[0.02]"}`}>
+              <div key={c._id} onClick={() => handleOpenChat(c)} className={`flex items-center gap-3 p-4 cursor-pointer border-b border-slate-100 transition-colors ${isActive ? "bg-blue-50/50" : "hover:bg-slate-50"}`}>
                 <div className="relative shrink-0">
-                  <div className="w-14 h-14 rounded-2xl overflow-hidden border border-white/10 shadow-2xl">
+                  <div className="w-12 h-12 rounded-full overflow-hidden border border-slate-200">
                     <img src={p?.avatar || `https://ui-avatars.com/api/?name=${p?.name}&background=random`} className="w-full h-full object-cover" alt="" />
                   </div>
-                  {isOnline && <span className="absolute bottom-[-2px] right-[-2px] w-4 h-4 bg-emerald-500 border-4 border-slate-900 rounded-full"></span>}
+                  {isOnline && <span className="absolute bottom-0 right-0 w-3 h-3 bg-green-500 border-2 border-white rounded-full"></span>}
                 </div>
                 <div className="flex-1 min-w-0">
-                  <div className="flex justify-between items-baseline mb-1">
-                    <p className="font-black text-white text-[15px] truncate">{p?.name}</p>
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-widest">{c.lastMessageAt ? formatTimeAgo(c.lastMessageAt) : ""}</p>
+                  <div className="flex justify-between items-baseline mb-0.5">
+                    <p className={`text-sm truncate ${unread ? "font-bold text-slate-900" : "font-semibold text-slate-800"}`}>{p?.name}</p>
+                    <p className="text-xs text-slate-500">{c.lastMessageAt ? formatTimeAgo(c.lastMessageAt) : ""}</p>
                   </div>
-                  <p className="text-[12px] text-white/40 truncate font-bold leading-tight">{p?._id.toString() === user.id.toString() ? "You: " : ""}{c.lastMessage || "Start a connection"}</p>
+                  <p className={`text-sm truncate ${unread ? "font-semibold text-slate-800" : "text-slate-500"}`}>{p?._id.toString() === user.id.toString() ? "You: " : ""}{c.lastMessage || "Start a conversation"}</p>
                 </div>
-                {c.unreadCount?.[user.id] > 0 && <div className="bg-indigo-500 text-white text-[10px] font-black w-6 h-6 flex items-center justify-center rounded-lg shadow-lg shadow-indigo-500/40">{c.unreadCount[user.id]}</div>}
+                {unread && <div className="bg-blue-600 text-white text-[10px] font-bold w-5 h-5 flex items-center justify-center rounded-full">{c.unreadCount[user.id]}</div>}
               </div>
             );
           })}
@@ -248,50 +237,52 @@ export default function ChatHub() {
       </aside>
 
       {/* ── Chat Window (Main Thread) ── */}
-      <main key={activeConv?._id || "empty"} className={`flex-1 h-full flex-col bg-[#0F172A] relative ${activeConv ? "flex" : "hidden md:flex"}`}>
+      <main key={activeConv?._id || "empty"} className={`flex-1 h-full flex-col bg-white relative ${activeConv ? "flex" : "hidden md:flex"}`}>
         {activeConv ? (
           <>
-            <header className="sticky top-0 z-10 bg-[#0F172A]/80 backdrop-blur-xl border-b border-white/5 flex items-center p-4 px-6 gap-4 shrink-0 shadow-2xl">
-              <button onClick={() => setActiveConv(null)} className="md:hidden p-2 text-white/40 hover:text-white transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg></button>
-              <img src={activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.name || "U")}&background=random`} className="w-12 h-12 rounded-2xl border border-white/10" alt="" />
+            <header className="bg-white border-b border-slate-200 flex items-center p-4 gap-4 shrink-0 shadow-sm z-10">
+              <button onClick={() => setActiveConv(null)} className="md:hidden p-2 text-slate-500 hover:bg-slate-100 rounded-md transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 19l-7-7 7-7" /></svg></button>
+              <div className="w-10 h-10 rounded-full border border-slate-200 overflow-hidden shrink-0">
+                <img src={activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.avatar || `https://ui-avatars.com/api/?name=${encodeURIComponent(activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.name || "U")}&background=random`} className="w-full h-full object-cover" alt="" />
+              </div>
               <div className="flex-1 min-w-0">
-                <h3 className="font-black text-white truncate text-lg tracking-tight">{activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.name}</h3>
-                <div className="flex items-center gap-2 mt-0.5">
+                <h3 className="font-semibold text-slate-900 truncate text-base">{activeConv.participants.find((p) => p._id.toString() !== user.id.toString())?.name}</h3>
+                <div className="flex items-center gap-1.5 mt-0.5">
                    {(() => {
                       const other = activeConv.participants.find((p) => p._id.toString() !== user.id.toString());
                       const isOnline = other && onlineUsers.some((id) => id.toString() === other._id.toString());
                       return (
                          <>
-                            <div className={`w-2 h-2 rounded-full ${isOnline ? "bg-emerald-500 animate-pulse" : "bg-white/10"}`}></div>
-                            <span className="text-[10px] font-black uppercase tracking-widest text-white/30">{isOnline ? "Active Core" : `Last seen ${formatTimeAgo(lastSeenMap[other?._id?.toString()] || other?.lastSeen)}`}</span>
+                            <div className={`w-1.5 h-1.5 rounded-full ${isOnline ? "bg-green-500" : "bg-slate-300"}`}></div>
+                            <span className="text-xs text-slate-500">{isOnline ? "Active now" : `Last seen ${formatTimeAgo(lastSeenMap[other?._id?.toString()] || other?.lastSeen)}`}</span>
                          </>
                       );
                    })()}
                 </div>
               </div>
-              <div className="flex gap-4">
-                <button onClick={() => setPendingCall({ type: 'video' })} className="w-12 h-12 bg-white/5 hover:bg-indigo-600/20 text-white/40 hover:text-indigo-400 rounded-2xl flex items-center justify-center transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
-                <button onClick={() => setPendingCall({ type: 'audio' })} className="w-12 h-12 bg-white/5 hover:bg-emerald-600/20 text-white/40 hover:text-emerald-400 rounded-2xl flex items-center justify-center transition-all"><svg className="w-6 h-6" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></button>
+              <div className="flex gap-2">
+                <button onClick={() => setPendingCall({ type: 'video' })} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-md transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"/></svg></button>
+                <button onClick={() => setPendingCall({ type: 'audio' })} className="p-2 text-slate-500 hover:bg-slate-100 hover:text-blue-600 rounded-md transition-colors"><svg className="w-5 h-5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24"><path d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"/></svg></button>
               </div>
             </header>
             
-            <div className="flex-1 overflow-y-auto p-6 md:p-10 space-y-6 custom-scrollbar bg-[radial-gradient(ellipse_at_top,#1E293B,transparent)]">
+            <div className="flex-1 overflow-y-auto p-4 md:p-6 space-y-4 bg-slate-50/50">
               {messages.map((m, i) => {
                 const isMe = m.senderId?._id?.toString() === user?.id?.toString();
                 return (
                   <div key={m._id || i} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
-                    <div className={`px-6 py-4 max-w-[85%] md:max-w-[65%] shadow-2xl relative ${isMe ? "bg-indigo-600 text-white rounded-[2rem] rounded-tr-none" : "bg-slate-800 text-slate-100 rounded-[2rem] rounded-tl-none border border-white/5"}`}>
-                      <p className="text-[14px] md:text-[15px] font-bold leading-relaxed">{m.content}</p>
-                      <div className="flex items-center justify-end gap-2 mt-2 opacity-30">
-                        <span className="text-[9px] font-black uppercase tracking-widest">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
+                    <div className={`px-4 py-2.5 max-w-[85%] md:max-w-[70%] shadow-sm ${isMe ? "bg-blue-600 text-white rounded-2xl rounded-tr-sm" : "bg-white text-slate-800 rounded-2xl rounded-tl-sm border border-slate-200"}`}>
+                      <p className="text-sm md:text-[15px] leading-relaxed whitespace-pre-wrap break-words">{m.content}</p>
+                      <div className="flex items-center justify-end gap-1 mt-1 opacity-70">
+                        <span className="text-[10px]">{new Date(m.createdAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         {isMe && (
-                          <div className="flex -space-x-1.5">
+                          <div className="flex -space-x-1">
                             {m.status === "SENT" ? (
-                              <svg className="w-4 h-4 text-white/40" fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                              <svg className="w-3.5 h-3.5 text-white/70" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                             ) : (
                               <>
-                                <svg className={`w-4 h-4 ${m.status === "READ" ? "text-emerald-400" : "text-white/60"}`} fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
-                                <svg className={`w-4 h-4 ${m.status === "READ" ? "text-emerald-400" : "text-white/60"}`} fill="none" stroke="currentColor" strokeWidth="4" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                                <svg className={`w-3.5 h-3.5 ${m.status === "READ" ? "text-blue-200" : "text-white/70"}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
+                                <svg className={`w-3.5 h-3.5 ${m.status === "READ" ? "text-blue-200" : "text-white/70"}`} fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24"><path d="M5 13l4 4L19 7"/></svg>
                               </>
                             )}
                           </div>
@@ -302,66 +293,78 @@ export default function ChatHub() {
                 );
               })}
               {activeConv.participants.filter(p => typingUsers.has(p._id.toString())).map(p => (
-                <div key={p._id} className="bg-white/5 backdrop-blur-sm rounded-full px-6 py-2 w-fit flex gap-1.5 items-center animate-bounce-in"><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce"></span><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-100"></span><span className="w-1.5 h-1.5 bg-indigo-400 rounded-full animate-bounce delay-200"></span><span className="text-[10px] font-black text-indigo-400 uppercase tracking-widest ml-1">Decoding message...</span></div>
+                <div key={p._id} className="bg-white border border-slate-200 rounded-2xl rounded-tl-sm px-4 py-3 w-fit flex gap-1 items-center shadow-sm text-slate-500">
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce"></span>
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-100"></span>
+                  <span className="w-1.5 h-1.5 bg-slate-400 rounded-full animate-bounce delay-200"></span>
+                </div>
               ))}
-              <div ref={bottomRef} className="h-4" />
+              <div ref={bottomRef} className="h-2" />
             </div>
 
-            <div className="sticky bottom-0 p-6 md:p-8 shrink-0 flex gap-4 items-center bg-gradient-to-t from-[#0F172A] to-transparent">
-              <div className="flex-1 relative group">
-                 <input type="text" value={reply} onChange={handleTyping} onKeyDown={(e) => e.key === 'Enter' && handleSend(e)} placeholder="Send encrypted transmission..." className="w-full px-8 py-5 bg-white/5 border border-white/5 rounded-[2.5rem] text-[15px] font-bold text-white outline-none focus:ring-4 focus:ring-indigo-500/10 focus:bg-white/10 focus:border-indigo-500/50 transition-all shadow-2xl" />
-                 <button className="absolute right-6 top-1/2 -translate-y-1/2 text-white/20 hover:text-white"><svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg></button>
+            <div className="p-4 bg-white border-t border-slate-200 shrink-0">
+              <div className="flex gap-2 items-end bg-slate-100 border border-transparent rounded-2xl px-2 py-2 focus-within:bg-white focus-within:border-blue-500 transition-colors">
+                 <button className="p-2 text-slate-400 hover:text-slate-600 rounded-full hover:bg-slate-200 transition-colors shrink-0">
+                    <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"/></svg>
+                 </button>
+                 <textarea 
+                    value={reply} 
+                    onChange={handleTyping} 
+                    onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSend(e); } }} 
+                    placeholder="Write a message..." 
+                    className="flex-1 max-h-32 min-h-[40px] bg-transparent text-sm text-slate-800 placeholder:text-slate-500 outline-none resize-none py-2"
+                    rows={1}
+                 />
+                 <button onClick={handleSend} disabled={sending || !reply.trim()} className="p-2 bg-blue-600 hover:bg-blue-700 text-white rounded-full disabled:opacity-50 disabled:bg-slate-300 disabled:text-white transition-colors shrink-0 mb-0.5 mr-0.5">
+                    <svg className="w-4 h-4 ml-0.5 mt-0.5" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg>
+                 </button>
               </div>
-              <button onClick={handleSend} disabled={sending || !reply.trim()} className="w-16 h-16 bg-indigo-600 hover:bg-indigo-500 text-white rounded-[1.8rem] flex items-center justify-center shadow-[0_20px_50px_-10px_rgba(79,70,229,0.5)] active:scale-90 disabled:opacity-30 disabled:grayscale transition-all"><svg className="w-7 h-7 rotate-90" fill="currentColor" viewBox="0 0 24 24"><path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" /></svg></button>
             </div>
           </>
         ) : (
-          <div className="flex-1 flex flex-col items-center justify-center p-12 text-center bg-[#0F172A]">
-            <div className="w-32 h-32 bg-indigo-600/10 rounded-[3rem] flex items-center justify-center shadow-2xl mb-10 group animate-pulse">
-               <svg className="w-12 h-12 text-indigo-500 transform group-hover:scale-110 transition-transform" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" /></svg>
+          <div className="flex-1 flex flex-col items-center justify-center p-8 text-center bg-slate-50">
+            <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center shadow-sm border border-slate-200 mb-6">
+               <svg className="w-10 h-10 text-slate-400" fill="currentColor" viewBox="0 0 24 24"><path d="M20 2H4c-1.1 0-1.99.9-1.99 2L2 22l4-4h14c1.1 0 2-.9 2-2V4c0-1.1-.9-2-2-2z" /></svg>
             </div>
-            <h2 className="text-4xl font-black text-white tracking-tighter mb-4">Select Transmission.</h2>
-            <p className="text-white/20 text-sm font-bold max-w-sm uppercase tracking-[0.3em] leading-loose">Establish a secure end-to-end encrypted connection from the identity sidebar.</p>
+            <h2 className="text-2xl font-bold text-slate-800 mb-2">Your Messages</h2>
+            <p className="text-slate-500 text-sm max-w-sm">Select a conversation or start a new one to connect with your network.</p>
           </div>
         )}
       </main>
 
-      {/* 📞 Call Interfaces (WhatsApp-like Confirmation) */}
+      {/* 📞 Call Interfaces */}
       {pendingCall && (
-        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-black/80 backdrop-blur-md p-6">
-          <div className="bg-slate-900 border border-white/10 rounded-[3.5rem] p-12 shadow-[0_50px_100px_-20px_rgba(0,0,0,0.5)] max-w-sm w-full text-center space-y-10 animate-bounce-in">
-             <div className="w-24 h-24 bg-indigo-600/20 rounded-[2rem] flex items-center justify-center text-4xl mx-auto shadow-2xl border border-indigo-500/20 animate-pulse">
+        <div className="fixed inset-0 z-[110] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center">
+             <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-6">
                 {pendingCall.type === 'video' ? '🎥' : '📞'}
              </div>
-             <div>
-                <h3 className="text-2xl font-black text-white tracking-tight italic uppercase">Initiate {pendingCall.type}?</h3>
-                <p className="text-xs text-white/30 font-black uppercase tracking-[0.3em] mt-4">Connecting with {activeConv.participants.find(p => p._id.toString() !== user.id.toString())?.name}</p>
-             </div>
-             <div className="flex gap-4">
-                <button onClick={() => setPendingCall(null)} className="flex-1 py-5 bg-white/5 text-white/40 text-[10px] font-black uppercase tracking-widest rounded-[1.5rem] hover:bg-white/10 transition-all">Abort</button>
-                <button onClick={() => initiateCallRequest(pendingCall.type)} className="flex-1 py-5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-[1.5rem] shadow-2xl shadow-indigo-500/20 hover:bg-indigo-500 transition-all">Confirm Call</button>
+             <h3 className="text-lg font-bold text-slate-900 mb-1">Start {pendingCall.type} call</h3>
+             <p className="text-sm text-slate-500 mb-8">with {activeConv.participants.find(p => p._id.toString() !== user.id.toString())?.name}</p>
+             <div className="flex gap-3">
+                <button onClick={() => setPendingCall(null)} className="flex-1 py-2.5 bg-white border border-slate-300 text-slate-700 text-sm font-semibold rounded-md hover:bg-slate-50 transition-colors">Cancel</button>
+                <button onClick={() => initiateCallRequest(pendingCall.type)} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 transition-colors">Call</button>
              </div>
           </div>
         </div>
       )}
 
       {incomingCall && (
-        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-[#0F172A]/90 backdrop-blur-xl p-6">
-          <div className="bg-slate-900 border border-white/10 rounded-[4rem] p-12 shadow-2xl max-w-sm w-full text-center space-y-10 animate-bounce-in">
-            <div className="w-24 h-24 bg-emerald-500/10 rounded-[2.5rem] flex items-center justify-center text-4xl mx-auto border border-emerald-500/20 animate-bounce">
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-slate-900/40 backdrop-blur-sm p-4">
+          <div className="bg-white rounded-2xl p-8 shadow-xl max-w-sm w-full text-center border-t-4 border-blue-600">
+            <div className="w-16 h-16 bg-blue-50 text-blue-600 rounded-full flex items-center justify-center text-2xl mx-auto mb-4 animate-pulse">
               {incomingCall.callType === "video" ? "🎥" : "📞"}
             </div>
-            <div>
-              <p className="text-[10px] font-black text-emerald-400 uppercase tracking-[0.5em] mb-4">Incoming Transmission</p>
-              <h3 className="text-3xl font-black text-white tracking-tighter italic">{incomingCall.fromName}</h3>
-            </div>
-            <div className="flex gap-4">
-              <button onClick={() => { socketRef.current.emit("call_rejected", { to: incomingCall.from }); setIncomingCall(null); }} className="flex-1 py-5 bg-rose-500/10 text-rose-500 text-[10px] font-black uppercase tracking-widest rounded-[1.8rem] hover:bg-rose-500/20 transition-all">Reject</button>
+            <p className="text-xs font-semibold text-blue-600 uppercase tracking-wider mb-2">Incoming Call</p>
+            <h3 className="text-xl font-bold text-slate-900 mb-8">{incomingCall.fromName}</h3>
+            
+            <div className="flex gap-3">
+              <button onClick={() => { socketRef.current.emit("call_rejected", { to: incomingCall.from }); setIncomingCall(null); }} className="flex-1 py-2.5 bg-red-50 text-red-600 text-sm font-semibold rounded-md hover:bg-red-100 transition-colors">Decline</button>
               <button onClick={() => { 
                 socketRef.current.emit("call_accepted", { to: incomingCall.from, fromName: user.name });
                 setActiveCall({ ...incomingCall, isIncoming: true, accepted: true });
                 setIncomingCall(null); 
-              }} className="flex-1 py-5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-[1.8rem] shadow-2xl shadow-indigo-500/40 hover:bg-indigo-500 transition-all">Authorize</button>
+              }} className="flex-1 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 transition-colors">Accept</button>
             </div>
           </div>
         </div>

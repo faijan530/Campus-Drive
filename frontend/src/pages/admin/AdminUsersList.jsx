@@ -15,75 +15,74 @@ export default function AdminUsersList() {
   }, [token]);
 
   return (
-    <div className="space-y-10 animate-fade-in">
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
-        <div className="space-y-1">
-          <h1 className="text-3xl font-black text-slate-800 tracking-tight italic uppercase">Identity Index.</h1>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] italic">Full directory of categorized system residents</p>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">User Management</h1>
+          <p className="text-sm text-slate-500 mt-1">Directory of all registered platform users</p>
         </div>
         <div className="flex items-center gap-3">
-           <div className="px-5 py-3 bg-white border border-slate-100 rounded-2xl shadow-sm text-[10px] font-black text-slate-400 uppercase tracking-widest">
-              Total Entities: <span className="text-slate-900">{users.length}</span>
+           <div className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-lg text-sm font-semibold text-slate-600">
+              Total Users: <span className="text-slate-900">{users.length}</span>
            </div>
         </div>
       </div>
 
-      <div className="bg-white/70 backdrop-blur-3xl rounded-[3rem] border border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.04)] overflow-hidden">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         {loading ? (
-          <div className="p-20 flex flex-col items-center justify-center gap-4 text-slate-300 italic">
-             <div className="w-10 h-10 border-4 border-indigo-50 border-t-indigo-600 rounded-full animate-spin"></div>
-             <span className="text-[10px] font-black uppercase tracking-widest">Syncing Data...</span>
+          <div className="p-16 flex flex-col items-center justify-center gap-3 text-slate-500">
+             <div className="w-8 h-8 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
+             <span className="text-sm font-semibold">Loading Users...</span>
           </div>
         ) : (
-          <div className="overflow-x-auto custom-scrollbar">
-            <table className="w-full text-left">
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50/50 border-b border-slate-50">
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Identity Details</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">Permission Link</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Academic Vector</th>
-                  <th className="px-8 py-6 text-[10px] font-black text-slate-400 uppercase tracking-widest">System Key</th>
+                <tr className="bg-slate-50 border-b border-slate-200">
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">User Details</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Role</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Class / Section</th>
+                  <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Enrollment Key</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-50/50">
+              <tbody className="divide-y divide-slate-100">
                 {users.map((u) => (
-                  <tr key={u._id} className="group hover:bg-slate-50 transition-colors">
-                    <td className="px-8 py-6">
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white font-black text-xs shadow-xl group-hover:scale-105 transition-transform">
+                  <tr key={u._id} className="hover:bg-slate-50/50 transition-colors">
+                    <td className="px-6 py-4">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 border border-slate-200 flex items-center justify-center text-slate-600 font-bold text-sm shrink-0">
                           {u.name.substring(0, 2).toUpperCase()}
                         </div>
                         <div>
-                          <p className="font-black text-slate-800 text-sm tracking-tight">{u.name}</p>
-                          <p className="text-[11px] font-bold text-slate-400 tracking-tight">{u.email}</p>
+                          <p className="font-semibold text-slate-900 text-sm">{u.name}</p>
+                          <p className="text-xs text-slate-500">{u.email}</p>
                         </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                      <span className={`px-4 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-widest ${
-                        u.role === 'Admin' ? 'bg-indigo-600 text-white shadow-lg shadow-indigo-100' :
-                        u.role === 'Teacher' ? 'bg-slate-900 text-white shadow-lg' :
-                        'bg-slate-100 text-slate-500'
+                    <td className="px-6 py-4">
+                      <span className={`inline-flex px-2.5 py-1 rounded-full text-xs font-semibold ${
+                        u.role === 'Admin' ? 'bg-indigo-50 text-indigo-700 border border-indigo-200' :
+                        u.role === 'Teacher' ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                        'bg-slate-100 text-slate-600 border border-slate-200'
                       }`}>
                         {u.role}
                       </span>
                     </td>
-                    <td className="px-8 py-6">
-                      <div className="flex items-center justify-center gap-3">
-                         <div className="text-center">
-                            <span className="text-[9px] font-black text-slate-300 uppercase block">Class</span>
-                            <span className="text-xs font-black text-slate-800 italic">{u.className || "—"}</span>
+                    <td className="px-6 py-4">
+                      <div className="flex items-center justify-center gap-2">
+                         <div className="text-center bg-slate-50 px-2 py-1 rounded border border-slate-100 min-w-[50px]">
+                            <span className="text-[10px] font-semibold text-slate-400 block uppercase">Class</span>
+                            <span className="text-xs font-semibold text-slate-800">{u.className || "—"}</span>
                          </div>
-                         <div className="w-[1px] h-4 bg-slate-100"></div>
-                         <div className="text-center">
-                            <span className="text-[9px] font-black text-slate-300 uppercase block">Sec</span>
-                            <span className="text-xs font-black text-slate-800 italic">{u.section || "—"}</span>
+                         <div className="text-center bg-slate-50 px-2 py-1 rounded border border-slate-100 min-w-[50px]">
+                            <span className="text-[10px] font-semibold text-slate-400 block uppercase">Sec</span>
+                            <span className="text-xs font-semibold text-slate-800">{u.section || "—"}</span>
                          </div>
                       </div>
                     </td>
-                    <td className="px-8 py-6">
-                       <span className="text-xs font-black text-slate-900 italic tracking-widest bg-slate-50 px-3 py-1 rounded-lg border border-slate-100 uppercase">
-                         #{u.enrollmentNumber || "GEN_KEY"}
+                    <td className="px-6 py-4">
+                       <span className="text-xs font-mono text-slate-600 bg-slate-50 px-2 py-1 rounded border border-slate-200">
+                         {u.enrollmentNumber || "N/A"}
                        </span>
                     </td>
                   </tr>
@@ -93,8 +92,8 @@ export default function AdminUsersList() {
           </div>
         )}
         {!loading && users.length === 0 && (
-          <div className="p-20 text-center text-slate-400 uppercase text-[10px] font-black italic tracking-widest bg-slate-50/30">
-            No active nodes detected in the current sector.
+          <div className="p-16 text-center text-slate-500 text-sm">
+            No users found in the system.
           </div>
         )}
       </div>

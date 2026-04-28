@@ -12,70 +12,79 @@ export default function AdminDashboard() {
   }, [token]);
 
   return (
-    <div className="space-y-10 animate-fade-in">
-      <div className="relative p-10 bg-slate-900 rounded-[3rem] overflow-hidden shadow-2xl">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/10 rounded-full blur-[80px] -mr-32 -mt-32"></div>
-        <div className="relative z-10 space-y-2">
-          <h1 className="text-4xl font-black text-white tracking-tighter italic uppercase">Command Center.</h1>
-          <p className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.5em] italic">Real-time Analytics & System Oversight</p>
+    <div className="max-w-7xl mx-auto space-y-6">
+      <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm flex justify-between items-center">
+        <div>
+          <h1 className="text-2xl font-bold text-slate-900">Admin Dashboard</h1>
+          <p className="text-sm text-slate-500 mt-1">Platform Analytics & System Oversight</p>
         </div>
+        <Link to="/app/admin/users" className="px-4 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors">
+          Manage Users
+        </Link>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-        <div className="group bg-white/70 backdrop-blur-3xl p-8 rounded-[2.5rem] border border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all border-b-4 border-b-indigo-500 overflow-hidden relative">
-          <div className="absolute -right-4 -bottom-4 text-indigo-50/50 text-8xl font-black italic opacity-10 group-hover:scale-110 transition-transform">01</div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Total Registered Agents</span>
-          <span className="text-5xl font-black text-slate-900 tracking-tighter">{data.totalStudents.toLocaleString()}</span>
-          <div className="mt-6 flex items-center gap-2 text-emerald-500">
-             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="3" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
-             <span className="text-[10px] font-black uppercase tracking-widest">+12% from last cycle</span>
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow border-t-4 border-t-blue-600">
+          <div>
+            <span className="text-sm font-semibold text-slate-500 mb-1 block">Total Registered Users</span>
+            <span className="text-4xl font-bold text-slate-900">{data.totalStudents.toLocaleString()}</span>
+          </div>
+          <div className="mt-4 flex items-center gap-1.5 text-green-600 text-sm font-medium">
+             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2.5" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6"/></svg>
+             <span>+12% from last cycle</span>
           </div>
         </div>
 
-        <div className="group bg-white/70 backdrop-blur-3xl p-8 rounded-[2.5rem] border border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.04)] hover:shadow-xl transition-all border-b-4 border-b-emerald-500 overflow-hidden relative">
-          <div className="absolute -right-4 -bottom-4 text-emerald-50/50 text-8xl font-black italic opacity-10 group-hover:scale-110 transition-transform">02</div>
-          <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-4">Global Efficiency Matrix</span>
-          <span className="text-5xl font-black text-slate-900 tracking-tighter">{data.avgScore}%</span>
-          <div className="mt-6 flex items-center gap-2 text-emerald-500">
-             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow border-t-4 border-t-emerald-500">
+          <div>
+            <span className="text-sm font-semibold text-slate-500 mb-1 block">Average Assessment Score</span>
+            <span className="text-4xl font-bold text-slate-900">{data.avgScore}%</span>
+          </div>
+          <div className="mt-4 flex items-center gap-2">
+             <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div className="bg-emerald-500 h-full rounded-full transition-all duration-1000" style={{ width: `${data.avgScore}%` }}></div>
              </div>
           </div>
         </div>
 
-        <div className="group bg-slate-900 p-8 rounded-[2.5rem] shadow-2xl overflow-hidden relative flex flex-col justify-between border border-white/5">
-           <div className="absolute top-0 right-0 p-8 text-white/5">
-              <svg className="w-20 h-20" fill="currentColor" viewBox="0 0 24 24"><path d="M13 10V3L4 14h7v7l9-11h-7z"/></svg>
-           </div>
+        <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm flex flex-col justify-between hover:shadow-md transition-shadow border-t-4 border-t-indigo-500 relative overflow-hidden">
            <div>
-              <span className="text-[10px] font-black text-indigo-400 uppercase tracking-[0.3em] block mb-2">Protocol Status</span>
-              <h3 className="text-xl font-black text-white italic tracking-tight">Systems Operational</h3>
+              <span className="text-sm font-semibold text-slate-500 mb-1 block">System Status</span>
+              <h3 className="text-lg font-bold text-slate-900 flex items-center gap-2">
+                <span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse"></span>
+                Fully Operational
+              </h3>
            </div>
-           <Link to="/app/admin/users" className="mt-8 py-4 bg-white text-slate-900 text-[10px] font-black uppercase tracking-widest text-center rounded-2xl hover:scale-95 transition-transform">Manage Access</Link>
+           <p className="text-sm text-slate-500 mt-4 leading-relaxed">
+              All platform services, including assessment processing and messaging, are running normally.
+           </p>
         </div>
       </div>
       
-      <div className="bg-white/50 backdrop-blur-3xl p-10 rounded-[4rem] border border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.03)] grid md:grid-cols-2 gap-10">
-        <div className="space-y-6">
-          <div>
-            <h2 className="text-2xl font-black text-slate-800 tracking-tight">Navigation Hub</h2>
-            <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mt-1">Direct Access to Analytic Modules</p>
-          </div>
-          <div className="flex flex-wrap gap-4">
-            <Link to="/app/admin/analytics/students" className="px-8 py-5 bg-white border border-slate-100 rounded-3xl text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
-              <span className="w-2 h-2 bg-indigo-500 rounded-full"></span>
-              Student Database
+      <div className="grid md:grid-cols-2 gap-6">
+        <div className="bg-white p-8 rounded-xl border border-slate-200 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 mb-2">Quick Navigation</h2>
+          <p className="text-sm text-slate-500 mb-6">Access key administrative modules and reports.</p>
+          <div className="flex flex-wrap gap-3">
+            <Link to="/app/admin/analytics/students" className="px-5 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-colors flex items-center gap-2">
+              <svg className="w-4 h-4 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197M13 7a4 4 0 11-8 0 4 4 0 018 0z"/></svg>
+              Student Records
             </Link>
-            <Link to="/app/admin/analytics/skills" className="px-8 py-5 bg-white border border-slate-100 rounded-3xl text-[10px] font-black text-slate-600 uppercase tracking-[0.2em] shadow-sm hover:shadow-xl hover:-translate-y-1 transition-all flex items-center gap-3">
-              <span className="w-2 h-2 bg-emerald-500 rounded-full"></span>
-              Skill Distribution
+            <Link to="/app/admin/analytics/skills" className="px-5 py-2.5 bg-slate-50 border border-slate-200 rounded-md text-sm font-semibold text-slate-700 hover:bg-slate-100 hover:border-slate-300 transition-colors flex items-center gap-2">
+              <svg className="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/></svg>
+              Skill Insights
             </Link>
           </div>
         </div>
 
-        <div className="p-8 bg-indigo-600 rounded-[3rem] text-white space-y-4 shadow-2xl shadow-indigo-200">
-           <h4 className="text-[11px] font-black uppercase tracking-[0.4em] opacity-60">System Notification</h4>
-           <p className="text-base font-black italic tracking-tight leading-relaxed">"Global score averages have increased by 4% since the last recruitment cycle. Recommend monitoring active skill trends."</p>
+        <div className="bg-blue-50 border border-blue-100 p-8 rounded-xl shadow-sm flex flex-col justify-center">
+           <div className="flex items-center gap-2 mb-3">
+             <svg className="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+             <h4 className="text-sm font-bold text-blue-900 uppercase tracking-wider">System Insight</h4>
+           </div>
+           <p className="text-blue-800 text-sm leading-relaxed">
+             Average assessment scores have increased by 4% since the last review cycle. It is recommended to monitor the skill distribution trends in the coming weeks.
+           </p>
         </div>
       </div>
     </div>

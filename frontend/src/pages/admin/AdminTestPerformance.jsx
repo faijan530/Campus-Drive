@@ -11,47 +11,48 @@ export default function AdminTestPerformance() {
   }, [token]);
 
   return (
-    <div className="space-y-10 animate-fade-in">
-       <div className="space-y-1">
-        <h1 className="text-3xl font-black text-slate-800 tracking-tight italic uppercase">Performance Logs.</h1>
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.4em] italic">Aggregated results across all technical evaluation phases</p>
+    <div className="max-w-7xl mx-auto space-y-6">
+       <div className="bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <h1 className="text-2xl font-bold text-slate-900">Test Performance</h1>
+        <p className="text-sm text-slate-500 mt-1">Aggregated results and statistics for all assessments</p>
       </div>
 
-      <div className="bg-white/70 backdrop-blur-3xl rounded-[3.5rem] border border-white shadow-[0_32px_64px_-12px_rgba(0,0,0,0.04)] overflow-hidden">
-        <div className="overflow-x-auto custom-scrollbar">
-          <table className="w-full text-left">
+      <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-slate-50/50 border-b border-slate-50">
-                <th className="px-10 py-7 text-[10px] font-black text-slate-400 uppercase tracking-widest">Test Phase Identity</th>
-                <th className="px-10 py-7 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">Efficiency Rating</th>
-                <th className="px-10 py-7 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Saturation %</th>
+              <tr className="bg-slate-50 border-b border-slate-200">
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider">Assessment Name</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-center">Average Score</th>
+                <th className="px-6 py-4 text-xs font-semibold text-slate-500 uppercase tracking-wider text-right">Completion Rate</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-50">
+            <tbody className="divide-y divide-slate-100">
               {report.map((t) => (
-                <tr key={t.testId} className="group hover:bg-slate-50 transition-colors">
-                  <td className="px-10 py-7">
-                    <div className="flex items-center gap-5">
-                       <div className="w-12 h-12 rounded-2xl bg-slate-900 flex items-center justify-center text-white text-lg shadow-xl group-hover:scale-110 transition-transform">📊</div>
-                       <p className="text-base font-black text-slate-800 tracking-tight italic uppercase">{t.testName}</p>
+                <tr key={t.testId} className="hover:bg-slate-50/50 transition-colors">
+                  <td className="px-6 py-4">
+                    <div className="flex items-center gap-4">
+                       <div className="w-10 h-10 rounded-lg bg-blue-50 flex items-center justify-center text-blue-600">
+                         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                       </div>
+                       <p className="text-sm font-semibold text-slate-900">{t.testName}</p>
                     </div>
                   </td>
-                  <td className="px-10 py-7 text-center">
-                    <div className="inline-flex items-center gap-3 px-6 py-2 bg-emerald-50 text-emerald-600 rounded-2xl border border-emerald-100">
-                       <span className="text-lg font-black italic tracking-tighter">{t.avgScore}%</span>
-                       <span className="text-[9px] font-black uppercase tracking-widest opacity-60">Avg</span>
-                    </div>
+                  <td className="px-6 py-4 text-center">
+                    <span className="inline-flex items-center px-3 py-1 bg-green-50 text-green-700 text-sm font-bold rounded-full border border-green-200">
+                       {t.avgScore}%
+                    </span>
                   </td>
-                  <td className="px-10 py-7 text-right">
-                    <span className="text-sm font-black text-slate-400 italic">
-                      {t.completionRate}% <span className="text-[10px] lowercase tracking-normal">saturated</span>
+                  <td className="px-6 py-4 text-right">
+                    <span className="text-sm font-semibold text-slate-700">
+                      {t.completionRate}%
                     </span>
                   </td>
                 </tr>
               ))}
               {report.length === 0 && (
                 <tr>
-                  <td colSpan="3" className="px-10 py-20 text-center text-[11px] font-black text-slate-300 uppercase tracking-[0.5em] italic">No performance logs detected in the system logs.</td>
+                  <td colSpan="3" className="px-6 py-12 text-center text-sm text-slate-500">No test performance data available yet.</td>
                 </tr>
               )}
             </tbody>
@@ -59,14 +60,10 @@ export default function AdminTestPerformance() {
         </div>
       </div>
 
-      <div className="p-10 bg-slate-900 rounded-[3rem] text-white flex flex-col md:flex-row items-center justify-between gap-8 border border-white/5 relative overflow-hidden shadow-2xl">
-         <div className="absolute top-0 left-0 w-64 h-64 bg-indigo-600/10 rounded-full blur-[100px] -ml-32 -mt-32"></div>
-         <div className="relative z-10 space-y-2 text-center md:text-left">
-            <h3 className="text-xl font-black italic tracking-tight uppercase">Analyze Individual Data.</h3>
-            <p className="text-[11px] font-bold text-indigo-400 uppercase tracking-widest">Cross-reference individual subjects with phase results for full clarity.</p>
-         </div>
-         <div className="relative z-10 shrink-0">
-            <div className="text-5xl font-black text-white/10 italic">STATS_v2</div>
+      <div className="p-8 bg-slate-50 rounded-xl border border-slate-200 flex flex-col md:flex-row items-center justify-between gap-6">
+         <div>
+            <h3 className="text-lg font-bold text-slate-900">Need more detailed insights?</h3>
+            <p className="text-sm text-slate-500 mt-1">Check individual student profiles for detailed assessment breakdown.</p>
          </div>
       </div>
     </div>

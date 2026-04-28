@@ -36,7 +36,6 @@ export default function TestPage() {
   const inactivityRef = useRef({ last: Date.now(), timer: null });
   const violationRef = useRef({ count: 0, lastViolation: 0 });
 
-  // 1. Memoized Values First
   const answersArray = useMemo(() => Array.from(answers.entries()).map(([questionId, selectedOption]) => ({ questionId, selectedOption })), [answers]);
 
   const unansweredCount = useMemo(() => {
@@ -61,7 +60,6 @@ export default function TestPage() {
   const endsAtMs = attempt?.endsAt ? new Date(attempt.endsAt).getTime() : 0;
   const remainingMs = Math.max(0, endsAtMs - (currentTime + serverOffsetRef.current));
 
-  // 2. Critical Functions (hoisted but kept here for clarity)
   async function submit(source = "MANUAL") {
     if (!test) return;
     setSubmitting(true);
@@ -84,7 +82,6 @@ export default function TestPage() {
     } catch {}
   }
 
-  // 3. Side Effects (After hooks they depend on)
   useEffect(() => {
     if (!test) return;
 
@@ -121,7 +118,7 @@ export default function TestPage() {
         violationRef.current.count++;
         violationRef.current.lastViolation = now;
         setViolations(violationRef.current.count);
-        setWarning(`WARNING: Violation ${violationRef.current.count}/3 [${reason}]`);
+        setWarning(`Warning: Violation ${violationRef.current.count}/3 [${reason}]`);
         
         sendProctoring('VIOLATION', { reason, count: violationRef.current.count });
         
@@ -213,46 +210,46 @@ export default function TestPage() {
   const selected = q ? answers.get(q._id) : "";
 
   if (loading) return (
-     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-4">
-        <div className="w-12 h-12 border-4 border-indigo-100 border-t-indigo-600 rounded-full animate-spin"></div>
-        <p className="text-[10px] font-black text-slate-300 uppercase tracking-widest italic">Synchronizing Atomic Clock...</p>
+     <div className="flex flex-col items-center justify-center min-h-[60vh] space-y-3">
+        <div className="w-8 h-8 border-4 border-slate-100 border-t-blue-600 rounded-full animate-spin"></div>
+        <p className="text-sm font-medium text-slate-500">Loading Assessment...</p>
      </div>
   );
 
   if (!test) return (
-    <div className="max-w-2xl mx-auto mt-20 p-16 bg-white/70 backdrop-blur-3xl border border-white rounded-[3rem] shadow-2xl text-center">
-       <div className="w-20 h-20 bg-slate-50 rounded-3xl mx-auto flex items-center justify-center text-4xl mb-6">📡</div>
-       <h2 className="text-2xl font-black text-slate-800 uppercase tracking-tight">No Active Protocols</h2>
-       <p className="text-sm font-bold text-slate-400 mt-2">The system is currently on standby. Await external signal for assessment phase.</p>
+    <div className="max-w-2xl mx-auto mt-20 p-12 bg-white border border-slate-200 rounded-xl shadow-sm text-center">
+       <div className="w-16 h-16 bg-slate-50 rounded-full mx-auto flex items-center justify-center mb-4">
+         <svg className="w-8 h-8 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+       </div>
+       <h2 className="text-xl font-bold text-slate-900">No Active Test</h2>
+       <p className="text-sm text-slate-500 mt-2">There are currently no active assessments available for you.</p>
     </div>
   );
 
   if (needsActivation) return (
-    <div className="max-w-3xl mx-auto space-y-8 animate-fade-in pb-20">
-      <div className="bg-white/80 backdrop-blur-3xl border border-white rounded-[4rem] p-12 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.06)] relative overflow-hidden group">
-        <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-50/50 rounded-bl-full -z-0"></div>
-        
-        <div className="relative z-10 space-y-8">
-          <div className="flex items-center gap-3">
-             <span className="px-3 py-1 rounded-lg bg-emerald-50 text-[10px] font-black text-emerald-600 uppercase tracking-widest border border-emerald-100">Ready</span>
-             <h1 className="text-3xl font-black text-slate-800 tracking-tight">{test.title}</h1>
+    <div className="max-w-2xl mx-auto space-y-6">
+      <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm">
+        <div className="space-y-6 text-center">
+          <div>
+            <span className="inline-flex px-3 py-1 rounded-full bg-green-50 text-xs font-semibold text-green-700 border border-green-200 mb-4">Ready to Start</span>
+            <h1 className="text-2xl font-bold text-slate-900">{test.title}</h1>
           </div>
 
           <div className="grid grid-cols-2 gap-4">
-            <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
-               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Time Allocated</div>
-               <div className="text-xl font-black text-slate-800">{test.durationMinutes} Minutes</div>
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+               <div className="text-xs font-semibold text-slate-500 mb-1">Time Allocated</div>
+               <div className="text-lg font-bold text-slate-900">{test.durationMinutes} Minutes</div>
             </div>
-            <div className="bg-slate-50/50 p-6 rounded-3xl border border-slate-100">
-               <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Complexity Matrix</div>
-               <div className="text-xl font-black text-slate-800">{test.questionCount || '??'} Modules</div>
+            <div className="bg-slate-50 p-4 rounded-lg border border-slate-200">
+               <div className="text-xs font-semibold text-slate-500 mb-1">Questions</div>
+               <div className="text-lg font-bold text-slate-900">{test.questionCount || '??'}</div>
             </div>
           </div>
 
           {isScheduled ? (
-            <div className="p-10 bg-indigo-600 rounded-[3rem] text-center shadow-2xl shadow-indigo-200">
-               <div className="text-[10px] font-black text-white/60 uppercase tracking-[0.4em] mb-4">Countdown to Activation</div>
-               <div className="text-6xl font-black text-white tracking-tighter">
+            <div className="p-6 bg-slate-50 rounded-lg border border-slate-200">
+               <div className="text-xs font-semibold text-slate-500 mb-2">Starts In</div>
+               <div className="text-4xl font-bold text-slate-900 font-mono">
                   {Math.floor(timeUntilStart / 3600000).toString().padStart(2, '0')}:
                   {String(Math.floor((timeUntilStart % 3600000) / 60000)).padStart(2, '0')}:
                   {String(Math.floor((timeUntilStart % 60000) / 1000)).padStart(2, '0')}
@@ -264,9 +261,9 @@ export default function TestPage() {
                 await api.post(`/api/test/${test?.id || test?._id}/student-activate`, {}, token);
                 window.location.reload();
               }}
-              className="w-full py-6 bg-slate-900 text-white text-[11px] font-black uppercase tracking-[0.3em] rounded-[2rem] shadow-2xl hover:bg-black transition-all active:scale-95"
+              className="w-full py-3 bg-blue-600 text-white text-sm font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors"
             >
-              Initiate Assessment Phase
+              Start Assessment
             </button>
           )}
         </div>
@@ -275,22 +272,22 @@ export default function TestPage() {
   );
 
   return (
-    <div className="space-y-8 animate-fade-in pb-20">
-      <div className="flex items-center justify-between gap-6 flex-wrap px-2">
-        <div className="space-y-1">
-           <h1 className="text-2xl font-black text-slate-800 tracking-tight leading-none truncate max-w-sm">{test.title}</h1>
-           <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest italic">Encrypted Session Flow</p>
+    <div className="max-w-6xl mx-auto space-y-6 pb-20">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 bg-white p-6 rounded-xl border border-slate-200 shadow-sm">
+        <div>
+           <h1 className="text-xl font-bold text-slate-900">{test.title}</h1>
+           <p className="text-sm text-slate-500 mt-1">Assessment in Progress</p>
         </div>
 
-        <div className="flex items-center gap-4">
-           <div className={`p-4 rounded-2xl border text-center transition-all ${remainingMs < 300000 ? 'bg-rose-600 border-rose-500 shadow-xl shadow-rose-100' : 'bg-slate-900 border-slate-800 shadow-xl'}`}>
-              <div className="text-[9px] font-black text-white/50 uppercase tracking-widest mb-1">Global Timer</div>
-              <div className="text-xl font-black text-white leading-none font-mono">{msToClock(remainingMs)}</div>
+        <div className="flex items-center gap-4 flex-wrap">
+           <div className={`px-4 py-2 rounded-md border flex items-center gap-3 ${remainingMs < 300000 ? 'bg-red-50 border-red-200 text-red-700' : 'bg-slate-50 border-slate-200 text-slate-800'}`}>
+              <div className="text-xs font-semibold uppercase">Time Remaining</div>
+              <div className="text-lg font-bold font-mono">{msToClock(remainingMs)}</div>
            </div>
            
-           <div className={`p-4 rounded-2xl border text-center transition-all ${questionRemainingMs < 30000 ? 'bg-amber-500 border-amber-400' : 'bg-white border-white shadow-xl shadow-slate-100'}`}>
-              <div className={`text-[9px] font-black uppercase tracking-widest mb-1 ${questionRemainingMs < 30000 ? 'text-white/80' : 'text-slate-400'}`}>Unit {idx + 1}</div>
-              <div className={`text-xl font-black leading-none font-mono ${questionRemainingMs < 30000 ? 'text-white' : 'text-slate-800'}`}>
+           <div className={`px-4 py-2 rounded-md border flex items-center gap-3 ${questionRemainingMs < 30000 ? 'bg-orange-50 border-orange-200 text-orange-700' : 'bg-white border-slate-200 text-slate-800'}`}>
+              <div className="text-xs font-semibold uppercase">Question {idx + 1} Timer</div>
+              <div className="text-lg font-bold font-mono">
                  {q && lockedQuestions.has(q._id) ? "LOCKED" : msToClock(questionRemainingMs)}
               </div>
            </div>
@@ -298,32 +295,32 @@ export default function TestPage() {
            <button 
              onClick={() => setSubmitOpen(true)}
              disabled={submitting}
-             className="px-8 py-5 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-[0.2em] rounded-2xl shadow-xl hover:bg-black transition-all active:scale-95"
+             className="px-6 py-2.5 bg-blue-600 text-white text-sm font-semibold rounded-md shadow-sm hover:bg-blue-700 transition-colors"
            >
-             Finalize Audit
+             Submit Test
            </button>
         </div>
       </div>
 
       {warning && (
-        <div className="p-4 bg-rose-600 text-white rounded-2xl flex items-center gap-4 animate-shake shadow-xl shadow-rose-100">
-           <span className="text-xl">🚨</span>
-           <p className="text-xs font-black uppercase tracking-[0.1em]">{warning}</p>
+        <div className="p-4 bg-red-50 text-red-700 border border-red-200 rounded-md flex items-center gap-3">
+           <svg className="w-5 h-5 shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+           <p className="text-sm font-semibold">{warning}</p>
         </div>
       )}
 
-      <div className="grid lg:grid-cols-12 gap-8 items-start">
-        <div className="lg:col-span-8">
-           <div className="bg-white/80 backdrop-blur-3xl border border-white rounded-[3rem] p-12 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.04)] min-h-[400px] flex flex-col items-center justify-center relative">
-              <div className="absolute top-8 left-12 text-[10px] font-black text-slate-300 uppercase tracking-widest">Question Module {(idx + 1).toString().padStart(2, '0')}</div>
+      <div className="grid lg:grid-cols-12 gap-6 items-start">
+        <div className="lg:col-span-8 space-y-6">
+           <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm min-h-[400px] flex flex-col justify-center">
+              <div className="text-sm font-semibold text-slate-500 mb-6">Question {idx + 1} of {questions.length}</div>
               
               {!q ? (
-                <p className="text-slate-400 font-bold">Waiting for module payload...</p>
+                <p className="text-slate-500">Loading question...</p>
               ) : (
-                <div className="w-full space-y-10">
-                   <h2 className="text-2xl font-black text-slate-800 leading-snug text-center">{q.question}</h2>
+                <div className="w-full space-y-8">
+                   <h2 className="text-xl font-semibold text-slate-900">{q.question}</h2>
                    
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <div className="space-y-3">
                       {[
                         { k: "A", t: q.optionA },
                         { k: "B", t: q.optionB },
@@ -334,15 +331,18 @@ export default function TestPage() {
                           key={opt.k}
                           disabled={lockedQuestions.has(q._id)}
                           onClick={() => setAnswers(new Map(answers).set(q._id, opt.k))}
-                          className={`p-6 rounded-[2rem] border-2 text-left transition-all relative overflow-hidden group ${
+                          className={`w-full p-4 rounded-lg border text-left transition-colors flex items-center gap-4 ${
                             selected === opt.k 
-                              ? 'border-indigo-600 bg-indigo-50/50 shadow-lg' 
-                              : 'border-slate-50 bg-slate-50/30 hover:border-slate-200'
+                              ? 'border-blue-600 bg-blue-50' 
+                              : 'border-slate-200 bg-white hover:border-slate-300 hover:bg-slate-50'
                           } ${lockedQuestions.has(q._id) ? 'opacity-50 cursor-not-allowed' : ''}`}
                         >
-                           {selected === opt.k && <div className="absolute top-0 right-0 w-8 h-8 bg-indigo-600 rounded-bl-xl flex items-center justify-center text-white text-[10px] font-black">✓</div>}
-                           <span className={`text-[10px] font-black uppercase tracking-widest mb-2 block ${selected === opt.k ? 'text-indigo-600' : 'text-slate-400'}`}>Protocol {opt.k}</span>
-                           <span className={`text-sm font-bold block ${selected === opt.k ? 'text-slate-900' : 'text-slate-600 group-hover:text-slate-800'}`}>{opt.t}</span>
+                           <div className={`w-8 h-8 rounded-full border flex items-center justify-center shrink-0 text-sm font-bold ${
+                             selected === opt.k ? 'bg-blue-600 border-blue-600 text-white' : 'border-slate-300 text-slate-500'
+                           }`}>
+                             {opt.k}
+                           </div>
+                           <span className={`text-base font-medium ${selected === opt.k ? 'text-blue-900' : 'text-slate-700'}`}>{opt.t}</span>
                         </button>
                       ))}
                    </div>
@@ -350,36 +350,36 @@ export default function TestPage() {
               )}
            </div>
 
-           <div className="flex items-center justify-between mt-8">
+           <div className="flex items-center justify-between">
               <button 
                 onClick={() => setIdx(Math.max(0, idx - 1))}
                 disabled={idx === 0 || lockedQuestions.has(questions[idx - 1]?._id)}
-                className="px-10 py-4 bg-white border border-slate-100 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 hover:text-slate-800 disabled:opacity-20 transition-all"
+                className="px-6 py-2 bg-white border border-slate-300 rounded-md text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
               >
-                Previous Trace
+                Previous
               </button>
               <button 
                 onClick={() => setIdx(Math.min(questions.length - 1, idx + 1))}
                 disabled={idx >= questions.length - 1}
-                className="px-10 py-4 bg-white border border-slate-100 rounded-2xl text-[10px] font-black text-slate-400 uppercase tracking-widest hover:bg-slate-50 hover:text-slate-800 disabled:opacity-20 transition-all"
+                className="px-6 py-2 bg-white border border-slate-300 rounded-md text-sm font-semibold text-slate-700 hover:bg-slate-50 disabled:opacity-50 transition-colors"
               >
-                Next Trace
+                Next
               </button>
            </div>
         </div>
 
         <div className="lg:col-span-4 space-y-6">
-           <div className="bg-white/80 backdrop-blur-3xl border border-white rounded-[2.5rem] p-8 shadow-[0_32px_64px_-12px_rgba(0,0,0,0.03)] uppercase">
-              <h3 className="text-[11px] font-black text-slate-400 tracking-widest mb-6">Logical Index</h3>
-              <div className="grid grid-cols-5 gap-3">
+           <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-sm">
+              <h3 className="text-sm font-bold text-slate-800 mb-4 uppercase tracking-wide">Questions Overview</h3>
+              <div className="grid grid-cols-5 gap-2">
                  {questions.map((qq, i) => (
                     <button
                       key={qq._id}
                       onClick={() => setIdx(i)}
-                      className={`h-12 rounded-xl text-xs font-black transition-all ${
-                        i === idx ? 'bg-slate-900 text-white shadow-xl' :
-                        answers.has(qq._id) ? 'bg-indigo-50 text-indigo-600 border border-indigo-100' :
-                        'bg-slate-50 text-slate-400 border border-slate-50 hover:border-slate-200'
+                      className={`h-10 rounded-md text-sm font-semibold transition-colors flex items-center justify-center ${
+                        i === idx ? 'bg-slate-800 text-white' :
+                        answers.has(qq._id) ? 'bg-blue-50 text-blue-700 border border-blue-200' :
+                        'bg-white text-slate-600 border border-slate-200 hover:border-slate-300'
                       }`}
                     >
                       {i + 1}
@@ -388,35 +388,34 @@ export default function TestPage() {
               </div>
            </div>
 
-           <div className="p-8 bg-black rounded-[2.5rem] text-white">
-              <div className="flex items-center gap-2 text-indigo-400 mb-4">
-                 <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-                 <span className="text-[10px] font-black uppercase tracking-widest">Proctoring Status</span>
+           <div className="p-6 bg-slate-50 rounded-xl border border-slate-200">
+              <div className="flex items-center gap-2 mb-2">
+                 <div className="w-2 h-2 bg-blue-600 rounded-full animate-pulse"></div>
+                 <span className="text-xs font-bold text-slate-700 uppercase tracking-wide">Proctoring Active</span>
               </div>
-              <p className="text-[11px] font-bold text-slate-500 leading-relaxed uppercase tracking-tighter italic">Active surveillance engaged. Anti-cheating protocols at 100% sensitivity level. Global session ID recorded.</p>
+              <p className="text-xs text-slate-600 leading-relaxed">Your activity is being monitored. Tab switching and copy/pasting are disabled and will be flagged.</p>
            </div>
         </div>
       </div>
 
-      <Modal open={submitOpen} title="Finalize Audit" onClose={() => setSubmitOpen(false)}>
-        <div className="space-y-6 p-4">
+      <Modal open={submitOpen} title="Submit Assessment" onClose={() => setSubmitOpen(false)}>
+        <div className="p-2 space-y-6">
            <div className="text-center">
-              <div className="text-4xl mb-4">🔒</div>
-              <h3 className="text-xl font-black text-slate-800 uppercase tracking-tight">Lock Session?</h3>
-              <p className="text-sm font-bold text-slate-400 mt-2">You have <span className="text-slate-800">{unansweredCount} modules</span> requiring logic input. Submission is permanent.</p>
+              <h3 className="text-lg font-bold text-slate-900">Are you sure you want to submit?</h3>
+              <p className="text-sm text-slate-500 mt-2">You have <span className="font-bold text-slate-800">{unansweredCount}</span> unanswered questions. Once submitted, you cannot change your answers.</p>
            </div>
-           <div className="flex gap-4">
+           <div className="flex gap-3 justify-end">
               <button 
                 onClick={() => setSubmitOpen(false)}
-                className="flex-1 py-4 bg-slate-50 text-slate-400 text-[10px] font-black uppercase tracking-widest rounded-2xl hover:bg-slate-100"
+                className="px-4 py-2 bg-white text-slate-700 text-sm font-semibold border border-slate-300 rounded-md hover:bg-slate-50 transition-colors"
               >
-                Return to Audit
+                Cancel
               </button>
               <button 
                 onClick={() => submit("MANUAL")}
-                className="flex-1 py-4 bg-indigo-600 text-white text-[10px] font-black uppercase tracking-widest rounded-2xl shadow-xl shadow-indigo-100 hover:bg-black"
+                className="px-6 py-2 bg-blue-600 text-white text-sm font-semibold rounded-md hover:bg-blue-700 transition-colors shadow-sm"
               >
-                Execute Submission
+                Submit Now
               </button>
            </div>
         </div>
